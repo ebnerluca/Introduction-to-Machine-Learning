@@ -9,6 +9,7 @@ import numpy as np
 # import pandas as pd
 from matplotlib import pyplot as plt
 from numpy import genfromtxt
+import math
 
 # Press the green button in the gutter to run the script.
 
@@ -19,6 +20,10 @@ def read_data(path):
     X = data[1:,1:]
     y = data[1:,0]
     return X,y
+
+def compute_RMSE(y, y_hat):
+    
+    return math.sqrt(np.square(np.subtract(y,y_hat)).mean())
 
 
 if __name__ == '__main__':

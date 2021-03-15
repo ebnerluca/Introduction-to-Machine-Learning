@@ -31,11 +31,7 @@ if __name__ == '__main__':
     datapath = "data/train.csv"
     X,y = read_data(datapath)
 
-    # Debug
-    #print(np.shape(X))
-    #print(X)
-    #print(np.shape(y))
-    #print(y)
+    print("Data file path: " + datapath + ". Number of data points: ")
     print(len(X[:,1]))
 
     alphas = np.array([0.1, 1., 10., 100., 200.])

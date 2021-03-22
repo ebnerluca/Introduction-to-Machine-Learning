@@ -3,6 +3,7 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
+from sklearn.linear_model import LassoCV, MultiTaskLassoCV
 from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -57,11 +58,15 @@ if __name__ == '__main__':
     # Transform X
     X = np.apply_along_axis(transform_x, axis=1, arr=X)
     
-    model = RidgeCV(alphas=[0.1, 0.420, 0.69, 1, 3, 4.20, 5, 6.90, 10, 42, 69], alpha_per_target = True).fit(X,y)
+    #model = RidgeCV(alphas=[0.1, 0.420, 0.69, 1, 3, 4.20, 5, 6.90, 10, 42, 69], alpha_per_target = True).fit(X,y)
 
+    lamda_vec = np.array([0.1, 0.420, 0.69, 1, 3, 4.20, 5, 6.90, 10, 42, 69])
+
+    model = MultiTaskLassoCV(alphas = lamda_vec, cv = 10, fit_intercept=False)
+
+    model.fit(X, y)
+    
     weights = model.coef_
-
-    print(model.alpha_)
 
     np.savetxt("results.csv", weights, delimiter="\n")
 

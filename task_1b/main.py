@@ -19,8 +19,32 @@ def read_data(path):
     csv = np.recfromcsv("train.csv")
     X = np.column_stack((csv.x1, csv.x2, csv.x3, csv.x4, csv.x5))
     y = np.column_stack((csv.y,))
-    
+
     return X,y
+
+def transform_x(X):
+    return np.array(X[0],
+                    X[1],
+                    X[2],
+                    X[3],
+                    X[4],
+                    X[0]**2,
+                    X[1]**2,
+                    X[2]**2,
+                    X[3]**2,
+                    X[4]**2,
+                    np.exp(X[0]),
+                    np.exp(X[1]),
+                    np.exp(X[2]),
+                    np.exp(X[3]),
+                    np.exp(X[4]),
+                    np.cos(X[0]),
+                    np.cos(X[1]),
+                    np.cos(X[2]),
+                    np.cos(X[3]),
+                    np.cos(X[4]),
+                    1
+                    )
 
 def compute_RMSE(y, y_hat):
     

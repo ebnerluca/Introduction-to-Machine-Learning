@@ -16,14 +16,14 @@ import math
 def read_data(path):
     """Input: .csv filename string. Output: ndarray"""
 
-    csv = np.recfromcsv("train.csv")
+    csv = np.recfromcsv(path)
     X = np.column_stack((csv.x1, csv.x2, csv.x3, csv.x4, csv.x5))
     y = np.column_stack((csv.y,))
 
     return X,y
 
 def transform_x(X):
-    return np.array(X[0],
+    return np.array((X[0],
                     X[1],
                     X[2],
                     X[3],
@@ -44,7 +44,7 @@ def transform_x(X):
                     np.cos(X[3]),
                     np.cos(X[4]),
                     1
-                    )
+                    ))
 
 def compute_RMSE(y, y_hat):
     
@@ -56,6 +56,11 @@ if __name__ == '__main__':
     datapath = "data/train.csv"
     X,y = read_data(datapath)
 
+    # Transform X
+    X = np.apply_along_axis(transform_x, axis=1, arr=X)
+    print(np.shape(X))
+
+    pass
     print("Data file path: " + datapath + ". Number of data points: ")
     print(len(X[:,1]))
 

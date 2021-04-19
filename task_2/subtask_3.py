@@ -99,7 +99,7 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = False #True: training False: use for final solution
+    training_mode = True #True: training False: use for final solution
 
     if training_mode:
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         print(f"shape of test_data: {test_data.shape}")
         print(f"shape of test_labels: {test_labels.shape}")
 
-        EPOCHS = 20
+        EPOCHS = 50
         BATCH_SIZE = 64
         LEARNING_RATE = 0.001
 
@@ -209,7 +209,9 @@ if __name__ == '__main__':
         print(y_pred_arr.shape)
         print(y_true_arr.shape)
 
-        task3 = np.mean(0.5 + 0.5 * np.maximum(0, metrics.r2_score(y_true_arr, y_pred_arr)))
+        #task3 = np.mean(0.5 + 0.5 * np.maximum(0, metrics.r2_score(y_true_arr, y_pred_arr)))
+        task3 = np.mean([0.5 + 0.5 * np.maximum(0, metrics.r2_score(y_true_arr[:,i], y_pred_arr[:,i])) for i in range(4)])
+
         print(f"Metric of task3: {task3}")
 
         output_array = y_pred_arr

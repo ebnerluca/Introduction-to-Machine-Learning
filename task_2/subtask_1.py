@@ -99,7 +99,7 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = False #True: training False: use for final solution
+    training_mode = True #True: training False: use for final solution
 
     if training_mode:
 
@@ -127,8 +127,8 @@ if __name__ == '__main__':
         #print(f"shape of test_labels: {test_labels.shape}")
 
 
-        EPOCHS = 20
-        BATCH_SIZE = 64
+        EPOCHS = 1
+        BATCH_SIZE = 512
         LEARNING_RATE = 0.001
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
@@ -218,6 +218,8 @@ if __name__ == '__main__':
         print(y_pred_arr.shape)
         print(y_true_arr.shape)
 
+        task1 = np.mean([metrics.roc_auc_score(y_true_arr[:,i], y_pred_arr[:,i]) for i in range(10)])
+        print(f"ROC metric of task1: {task1}")
         task1 = np.mean(metrics.roc_auc_score(y_true_arr, y_pred_arr))
         print(f"ROC metric of task1: {task1}")
 

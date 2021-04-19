@@ -99,120 +99,229 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    print("Reading data...", end=" ", flush=True)
-    data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task2.csv", delimiter=",",
-                               skip_header=True)
-    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
-    print("Done.")
+    training_mode = False #True: training False: use for final solution
 
-    #split train data in train and test set
-    testset_size = 4000
-    train_data = data[testset_size:, :]
-    train_labels = labels[testset_size:]
-    test_data = data[:testset_size, :]
-    test_labels = labels[:testset_size]
+    if training_mode:
 
-    print(f"shape of train_data: {train_data.shape}")
-    print(f"shape of train_labels: {train_labels.shape}")
-    print(f"shape of test_data: {test_data.shape}")
-    print(f"shape of test_labels: {test_labels.shape}")
+        print("Reading data...", end=" ", flush=True)
+        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task2.csv", delimiter=",",
+                                   skip_header=True)
+        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
+        print("Done.")
 
-    EPOCHS = 20
-    BATCH_SIZE = 64
-    LEARNING_RATE = 0.001
+        #split train data in train and test set
+        testset_size = 4000
+        train_data = data[testset_size:, :]
+        train_labels = labels[testset_size:]
+        test_data = data[:testset_size, :]
+        test_labels = labels[:testset_size]
 
-    train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
-    minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
-    test_data = TestData(torch.FloatTensor(test_data))
+        print(f"shape of train_data: {train_data.shape}")
+        print(f"shape of train_labels: {train_labels.shape}")
+        print(f"shape of test_data: {test_data.shape}")
+        print(f"shape of test_labels: {test_labels.shape}")
 
-    train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-    train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-    # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        EPOCHS = 20
+        BATCH_SIZE = 64
+        LEARNING_RATE = 0.001
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = BinaryClassification()
-    model.to(device)
+        train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
+        minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
+        test_data = TestData(torch.FloatTensor(test_data))
 
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
+        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
 
-    ## SUBTASK 1: Ordering of medical test
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = BinaryClassification()
+        model.to(device)
 
-    model.train()
-    for e in range(1, EPOCHS + 1):
-        epoch_loss = 0
-        epoch_acc = 0
-        for X_batch, y_batch in train_loader:
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+        ## SUBTASK 1: Ordering of medical test
 
-            optimizer.zero_grad()
+        model.train()
+        for e in range(1, EPOCHS + 1):
+            epoch_loss = 0
+            epoch_acc = 0
+            for X_batch, y_batch in train_loader:
 
-            y_pred = model(X_batch)
+                X_batch, y_batch = X_batch.to(device), y_batch.to(device)
 
-            y_pred = y_pred.reshape(-1,1)
-            y_batch = y_batch.reshape(-1,1)
+                optimizer.zero_grad()
 
-            loss = criterion(y_pred, y_batch)
-            acc = binary_acc(y_pred, y_batch)
+                y_pred = model(X_batch)
 
-            loss.backward()
-            optimizer.step()
+                y_pred = y_pred.reshape(-1,1)
+                y_batch = y_batch.reshape(-1,1)
 
-            epoch_loss += loss.item()
-            epoch_acc += acc.item()
+                loss = criterion(y_pred, y_batch)
+                acc = binary_acc(y_pred, y_batch)
 
-        # print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss.item()
+                epoch_acc += acc.item()
+
+            # print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
+
+            model.eval()
+            test_epoch_acc = 0
+            for X_batch_test, y_batch_test in train_loader_test:
+
+                X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
+
+                y_pred_test = model(X_batch_test)
+
+                y_pred_test = y_pred_test.reshape(-1,1)
+                y_batch_test = y_batch_test.reshape(-1,1)
+
+                acc_test = binary_acc(y_pred_test, y_batch_test)
+
+                test_epoch_acc += acc_test.item()
+            # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
+            model.train()
+
+            print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
+                  f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
+
+        #calculates the metric for the training set
+        y_true_arr = np.empty((0,1), float)
+        y_pred_arr = np.empty((0,1), float)
+        print(y_pred_arr.shape)
+        print(y_true_arr.shape)
+        with torch.no_grad():
+            for X_batch_inf, y_batch_true in train_loader:
+
+                X_batch_inf, y_batch_true = X_batch_inf.to(device), y_batch_true.to(device)
+                y_pred_inf = model(X_batch_inf)
+
+                y_pred_inf = torch.sigmoid(y_pred_inf)
+                y_pred_tag = y_pred_inf
+                #y_pred_tag = torch.round(y_pred_inf)
+                y_batch_true = np.asarray(y_batch_true).reshape((-1,1))
+                #print(y_batch_true.shape)
+                y_true_arr = np.vstack((y_true_arr, y_batch_true))
+                y_pred_arr = np.vstack((y_pred_arr, y_pred_tag.cpu().numpy()))
+
+
+        print(y_pred_arr.shape)
+        print(y_true_arr.shape)
+
+        task2 = metrics.roc_auc_score(y_true_arr, y_pred_arr)
+        print(f"ROC metric of task2: {task2}")
+
+        output_array = y_pred_arr
+        output_path = "data/output/subtask_2_labels.csv"
+        pd.DataFrame(output_array).to_csv(output_path,
+                                          header=["LABEL_Sepsis"], index=None)
+
+        print(f"Predicted labels saved to {output_path}.")
+
+    else:
+
+        print("Reading data...", end=" ", flush=True)
+        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task2.csv", delimiter=",",
+                                   skip_header=True)
+        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
+        print("Done.")
+        test = np.genfromtxt("data/preprocessed/test_features_preprocessed_task2.csv", delimiter=",",
+                                   skip_header=True)
+
+        train_data = data
+        train_labels = labels
+        test_data = test
+
+        print(f"shape of train_data: {train_data.shape}")
+        print(f"shape of train_labels: {train_labels.shape}")
+        print(f"shape of test_data: {test_data.shape}")
+
+        EPOCHS = 20
+        BATCH_SIZE = 64
+        LEARNING_RATE = 0.001
+
+        train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
+        #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
+        test_data = TestData(torch.FloatTensor(test_data))
+
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
+        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
+        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = BinaryClassification()
+        model.to(device)
+
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+        ## SUBTASK 1: Ordering of medical test
+
+        model.train()
+        for e in range(1, EPOCHS + 1):
+            epoch_loss = 0
+            epoch_acc = 0
+            for X_batch, y_batch in train_loader:
+
+                X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+
+                optimizer.zero_grad()
+
+                y_pred = model(X_batch)
+
+                y_pred = y_pred.reshape(-1,1)
+                y_batch = y_batch.reshape(-1,1)
+
+                loss = criterion(y_pred, y_batch)
+                acc = binary_acc(y_pred, y_batch)
+
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss.item()
+                epoch_acc += acc.item()
+
+            print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
+
+            """model.eval()
+            test_epoch_acc = 0
+            for X_batch_test, y_batch_test in train_loader_test:
+
+                X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
+
+                y_pred_test = model(X_batch_test)
+
+                y_pred_test = y_pred_test.reshape(-1,1)
+                y_batch_test = y_batch_test.reshape(-1,1)
+
+                acc_test = binary_acc(y_pred_test, y_batch_test)
+
+                test_epoch_acc += acc_test.item()
+            # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
+            model.train()"""
+
+            #print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
+            #      f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
 
         model.eval()
-        test_epoch_acc = 0
-        for X_batch_test, y_batch_test in train_loader_test:
 
-            X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
+        y_pred_arr = np.empty((0,1), float)
+        with torch.no_grad():
+            for X_batch_inf in test_loader:
 
-            y_pred_test = model(X_batch_test)
+                X_batch_inf = X_batch_inf.to(device)
+                y_pred_inf = model(X_batch_inf.float())
 
-            y_pred_test = y_pred_test.reshape(-1,1)
-            y_batch_test = y_batch_test.reshape(-1,1)
+                y_pred_inf = torch.sigmoid(y_pred_inf)
+                y_pred_tag = y_pred_inf
+                y_pred_arr = np.vstack((y_pred_arr, y_pred_tag.cpu().numpy()))
 
-            acc_test = binary_acc(y_pred_test, y_batch_test)
+        output_array = y_pred_arr
+        output_path = "data/output/subtask_2_labels.csv"
+        pd.DataFrame(output_array).to_csv(output_path,
+                                          header=["LABEL_Sepsis"], index=None)
 
-            test_epoch_acc += acc_test.item()
-        # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
-        model.train()
-
-        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
-              f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
-
-    #calculates the metric for the training set
-    y_true_arr = np.empty((0,1), float)
-    y_pred_arr = np.empty((0,1), float)
-    print(y_pred_arr.shape)
-    print(y_true_arr.shape)
-    with torch.no_grad():
-        for X_batch_inf, y_batch_true in train_loader:
-
-            X_batch_inf, y_batch_true = X_batch_inf.to(device), y_batch_true.to(device)
-            y_pred_inf = model(X_batch_inf)
-
-            y_pred_inf = torch.sigmoid(y_pred_inf)
-            y_pred_tag = y_pred_inf
-            #y_pred_tag = torch.round(y_pred_inf)
-            y_batch_true = np.asarray(y_batch_true).reshape((-1,1))
-            #print(y_batch_true.shape)
-            y_true_arr = np.vstack((y_true_arr, y_batch_true))
-            y_pred_arr = np.vstack((y_pred_arr, y_pred_tag.cpu().numpy()))
-            
-
-    print(y_pred_arr.shape)
-    print(y_true_arr.shape)
-
-    task2 = metrics.roc_auc_score(y_true_arr, y_pred_arr)
-    print(f"ROC metric of task2: {task2}")
-
-    output_array = y_pred_arr
-    output_path = "data/output/subtask_2_labels.csv"
-    pd.DataFrame(output_array).to_csv(output_path,
-                                      header=["LABEL_Sepsis"], index=None)
-
-    print(f"Predicted labels saved to {output_path}.")
+        print(f"Predicted labels saved to {output_path}.")

@@ -249,9 +249,7 @@ if __name__ == '__main__':
 
         print(f"shape of train_data: {train_data.shape}")
         print(f"shape of train_labels: {train_labels.shape}")
-        #print(f"shape of test_data: {test_data.shape}")
-        #print(f"shape of test_labels: {test_labels.shape}")
-
+        print(f"shape of test_data: {test_data.shape}")
 
         EPOCHS = 20
         BATCH_SIZE = 64
@@ -259,7 +257,7 @@ if __name__ == '__main__':
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
-        #test_data = TestData(torch.FloatTensor(test_data))
+        test_data = TestData(torch.FloatTensor(test_data))
 
         train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
         #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
@@ -327,18 +325,11 @@ if __name__ == '__main__':
             for X_batch_inf in test_loader:
 
                 X_batch_inf = X_batch_inf.to(device)
-                print(X_batch_inf.shape)
                 y_pred_inf = model(X_batch_inf.float())
 
                 y_pred_inf = torch.sigmoid(y_pred_inf)
-                #y_pred_tag = torch.round(y_pred_inf)
                 y_pred_tag = y_pred_inf
                 y_pred_arr = np.append(y_pred_arr, y_pred_tag.cpu().numpy(), axis=0)
-                #y_pred_list.append(y_pred_tag.cpu().numpy())
-                #y_true_list.append(y_batch_true.cpu().numpy())
-
-                #print((y_pred_tag.cpu().numpy()).shape)
-                #print(y_batch_inf.numpy().shape)
 
         print(y_pred_arr.shape)
 

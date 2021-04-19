@@ -227,7 +227,7 @@ if __name__ == '__main__':
         pd.DataFrame(output_array).to_csv(output_path,
                                         header=["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST", "LABEL_Alkalinephos",
                                                 "LABEL_Bilirubin_total","LABEL_Lactate","LABEL_TroponinI","LABEL_SaO2",
-                                                "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None)
+                                                "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
         pd.DataFrame(output_array).to_csv(output_path,
                                         header=["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST", "LABEL_Alkalinephos",
                                                 "LABEL_Bilirubin_total","LABEL_Lactate","LABEL_TroponinI","LABEL_SaO2",
-                                                "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None)
+                                                "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")
 

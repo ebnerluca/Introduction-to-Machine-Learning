@@ -217,7 +217,7 @@ if __name__ == '__main__':
         output_array = y_pred_arr
         output_path = "data/output/subtask_2_labels.csv"
         pd.DataFrame(output_array).to_csv(output_path,
-                                          header=["LABEL_Sepsis"], index=None)
+                                          header=["LABEL_Sepsis"], index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")
 
@@ -322,6 +322,6 @@ if __name__ == '__main__':
         output_array = y_pred_arr
         output_path = "data/output/subtask_2_labels.csv"
         pd.DataFrame(output_array).to_csv(output_path,
-                                          header=["LABEL_Sepsis"], index=None)
+                                          header=["LABEL_Sepsis"], index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")

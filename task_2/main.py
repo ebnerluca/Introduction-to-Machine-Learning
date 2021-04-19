@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 
-output_path = "data/output/hand_in.csv"
+output_file = "data/output/hand_in.csv"
+output_zip = "hand_in.zip"
 
 subtask_1_labels = np.genfromtxt("data/output/subtask_1_labels.csv", delimiter=",", skip_header=True)
 subtask_2_labels = np.genfromtxt("data/output/subtask_2_labels.csv", delimiter=",", skip_header=True)
@@ -16,4 +17,7 @@ total_output_header = ["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST
 
 total_output_array = np.hstack((subtask_1_labels, subtask_2_labels, subtask_3_labels))
 
-pd.DataFrame(total_output_array).to_csv(output_path, header=total_output_header, index=None)
+pd.DataFrame(total_output_array).to_csv(output_file, header=total_output_header, index=None)
+pd.DataFrame(total_output_array).to_csv(output_zip, header=total_output_header, index=None)
+
+

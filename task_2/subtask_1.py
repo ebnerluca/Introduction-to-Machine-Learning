@@ -237,10 +237,11 @@ if __name__ == '__main__':
         data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task1.csv", delimiter=",",
                                    skip_header=True)[:, 1:]
         test = np.genfromtxt("data/preprocessed/test_features_preprocessed_task1.csv", delimiter=",",
-                                   skip_header=True)[:, 1:]
-        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,0:11]
+                                   skip_header=True)[:, 0:]
+        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,1:11]
         pids = test[:,0]
-        labels = labels[:,1:]
+        # labels = labels[:,1:]
+        test = test[:,1:]
         print("Done.")
 
         train_data = data

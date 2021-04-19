@@ -121,7 +121,7 @@ if __name__ == '__main__':
         print(f"shape of test_data: {test_data.shape}")
         print(f"shape of test_labels: {test_labels.shape}")
 
-        EPOCHS = 20
+        EPOCHS = 35
         BATCH_SIZE = 64
         LEARNING_RATE = 0.001
 
@@ -239,7 +239,7 @@ if __name__ == '__main__':
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
 
-        EPOCHS = 20
+        EPOCHS = 35
         BATCH_SIZE = 64
         LEARNING_RATE = 0.001
 

@@ -243,6 +243,43 @@ pd.DataFrame(X_statistic, columns=labels).to_csv('data/preprocessed/test_feature
 
 print('Task 2 done')
 
+########################################################################################################################
+#### Preprocessing Task 3 Train
+########################################################################################################################
+N_STATISTIC_FEATURES = 5  # Mean, Var, Min, Max, Development
+
+features = ['RRate', 'ABPm', 'SpO2', 'Heartrate']
+X_raw = np.array(df.loc[:, features])
+X_statistic_raw = preprocessing_function_3(X_raw)
+age = np.array(df.iloc[::12, 2]).reshape(-1, 1)
+X_statistic_raw = np.concatenate((age, X_statistic_raw), axis=1)
+
+scaler3 = StandardScaler()
+scaler3.fit(X_statistic_raw)
+X_statistic = scaler3.transform(X_statistic_raw)
+
+labels = ["Age"]
+for i in range(0, int((np.shape(X_statistic)[1] - 1) / N_STATISTIC_FEATURES)):
+    labels.append(features[i] + "_Mean")
+    labels.append(features[i] + "_Var")
+    labels.append(features[i] + "_Min")
+    labels.append(features[i] + "_Max")
+    labels.append(features[i] + "_Dev")
+
+pd.DataFrame(X_statistic, columns=labels).to_csv('data/preprocessed/train_features_preprocessed_task3.csv', index=False, header=True)
+
+########################################################################################################################
+#### Preprocessing Task 3 Train Test
+########################################################################################################################
+X_raw_test = np.array(df_test.loc[:, features])
+age = np.array(df_test.iloc[::12, 2]).reshape(-1, 1)
+X_statistic_raw_test = preprocessing_function_3(X_raw_test)
+X_statistic_raw_test = np.concatenate((age, X_statistic_raw_test), axis=1)
+
+X_statistic_test = scaler3.transform(X_statistic_raw_test)
+pd.DataFrame(X_statistic_test, columns=labels).to_csv('data/preprocessed/test_features_preprocessed_task3.csv', index=False, header=True)
+
+print('Task 3 done')
 
 
 print('All the necessary data files were created')

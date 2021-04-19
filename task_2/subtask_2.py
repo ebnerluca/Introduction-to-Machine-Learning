@@ -195,7 +195,8 @@ if __name__ == '__main__':
             y_pred_inf = model(X_batch_inf)
 
             y_pred_inf = torch.sigmoid(y_pred_inf)
-            y_pred_tag = torch.round(y_pred_inf)
+            y_pred_tag = y_pred_inf
+            #y_pred_tag = torch.round(y_pred_inf)
             y_batch_true = np.asarray(y_batch_true).reshape((-1,1))
             #print(y_batch_true.shape)
             y_true_arr = np.vstack((y_true_arr, y_batch_true))

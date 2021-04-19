@@ -102,7 +102,9 @@ if __name__ == '__main__':
     print("Reading data...", end=" ", flush=True)
     data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task1.csv", delimiter=",",
                                skip_header=True)[:, 1:]
-    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,1:11]
+    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,0:11]
+    pids = labels[:,0]
+    labels = labels[:,1:]
     print("Done.")
 
     #split train data in train and test set
@@ -121,7 +123,7 @@ if __name__ == '__main__':
     #print(f"shape of test_labels: {test_labels.shape}")
 
 
-    EPOCHS = 50
+    EPOCHS = 20
     BATCH_SIZE = 64
     LEARNING_RATE = 0.001
 
@@ -199,7 +201,8 @@ if __name__ == '__main__':
             y_pred_inf = model(X_batch_inf)
 
             y_pred_inf = torch.sigmoid(y_pred_inf)
-            y_pred_tag = torch.round(y_pred_inf)
+            #y_pred_tag = torch.round(y_pred_inf)
+            y_pred_tag = y_pred_inf
             y_true_arr = np.append(y_true_arr, y_batch_true.cpu().numpy(), axis=0)
             y_pred_arr = np.append(y_pred_arr, y_pred_tag.cpu().numpy(), axis=0)
             #y_pred_list.append(y_pred_tag.cpu().numpy())
@@ -213,6 +216,16 @@ if __name__ == '__main__':
 
     task1 = np.mean(metrics.roc_auc_score(y_true_arr, y_pred_arr))
     print(f"ROC metric of task1: {task1}")
+
+    pids = pids.reshape((pids.shape[0], 1))
+    output_array = np.hstack((pids, y_pred_arr))
+    output_path = "data/output/subtask_1_labels.csv"
+    pd.DataFrame(output_array).to_csv(output_path,
+                                    header=["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST", "LABEL_Alkalinephos",
+                                            "LABEL_Bilirubin_total","LABEL_Lactate","LABEL_TroponinI","LABEL_SaO2",
+                                            "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None)
+
+    print(f"Predicted labels saved to {output_path}.")
 
 
     ## SUBTASK 2: Sepsis prediction

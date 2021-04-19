@@ -106,10 +106,11 @@ if __name__ == '__main__':
     print("Done.")
 
     #split train data in train and test set
-    train_data = data[4000:,:]
-    train_labels = labels[4000:]
-    test_data = data[:4000,:]
-    test_labels = labels[:4000]
+    testset_size = 4000
+    train_data = data[testset_size:, :]
+    train_labels = labels[testset_size:]
+    test_data = data[:testset_size, :]
+    test_labels = labels[:testset_size]
 
     print(f"shape of train_data: {train_data.shape}")
     print(f"shape of train_labels: {train_labels.shape}")
@@ -209,4 +210,9 @@ if __name__ == '__main__':
     task2 = metrics.roc_auc_score(y_true_arr, y_pred_arr)
     print(f"ROC metric of task2: {task2}")
 
-    # np.savetxt("results.csv", weights, delimiter="\n")
+    output_array = y_pred_arr
+    output_path = "data/output/subtask_2_labels.csv"
+    pd.DataFrame(output_array).to_csv(output_path,
+                                      header=["LABEL_Sepsis"], index=None)
+
+    print(f"Predicted labels saved to {output_path}.")

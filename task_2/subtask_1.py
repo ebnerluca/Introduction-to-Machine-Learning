@@ -12,6 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+import sklearn.metrics as metrics
 
 
 class BinaryClassification(nn.Module):
@@ -105,27 +106,31 @@ if __name__ == '__main__':
     print("Done.")
 
     #split train data in train and test set
-    train_data = data[4000:,:]
-    train_labels = labels[4000:,:]
-    test_data = data[:4000,:]
-    test_labels = labels[:4000,:]
+    '''testset_size = 4000
+    train_data = data[testset_size:,:]
+    train_labels = labels[testset_size:,:]
+    test_data = data[:testset_size,:]
+    test_labels = labels[:testset_size,:]'''
+
+    train_data = data
+    train_labels = labels
 
     print(f"shape of train_data: {train_data.shape}")
     print(f"shape of train_labels: {train_labels.shape}")
-    print(f"shape of test_data: {test_data.shape}")
-    print(f"shape of test_labels: {test_labels.shape}")
+    #print(f"shape of test_data: {test_data.shape}")
+    #print(f"shape of test_labels: {test_labels.shape}")
 
 
-    EPOCHS = 20
+    EPOCHS = 50
     BATCH_SIZE = 64
     LEARNING_RATE = 0.001
 
     train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
-    minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
-    test_data = TestData(torch.FloatTensor(test_data))
+    #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
+    #test_data = TestData(torch.FloatTensor(test_data))
 
     train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-    train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
+    #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
     # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -161,9 +166,9 @@ if __name__ == '__main__':
             epoch_loss += loss.item()
             epoch_acc += acc.item()
 
-        # print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
+        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
 
-        model.eval()
+        '''model.eval()
         test_epoch_acc = 0
         for X_batch_test, y_batch_test in train_loader_test:
 
@@ -178,10 +183,36 @@ if __name__ == '__main__':
 
             test_epoch_acc += acc_test.item()
         # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
-        model.train()
+        model.train()'''
 
-        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
-              f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
+        #print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
+        #      f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
+
+    model.eval()
+    
+    y_true_arr = np.empty((0,10), float)
+    y_pred_arr = np.empty((0,10), float)
+    with torch.no_grad():
+        for X_batch_inf, y_batch_true in train_loader:
+
+            X_batch_inf, y_batch_true = X_batch_inf.to(device), y_batch_true.to(device)
+            y_pred_inf = model(X_batch_inf)
+
+            y_pred_inf = torch.sigmoid(y_pred_inf)
+            y_pred_tag = torch.round(y_pred_inf)
+            y_true_arr = np.append(y_true_arr, y_batch_true.cpu().numpy(), axis=0)
+            y_pred_arr = np.append(y_pred_arr, y_pred_tag.cpu().numpy(), axis=0)
+            #y_pred_list.append(y_pred_tag.cpu().numpy())
+            #y_true_list.append(y_batch_true.cpu().numpy())
+
+            #print((y_pred_tag.cpu().numpy()).shape)
+            #print(y_batch_inf.numpy().shape)
+
+    print(y_pred_arr.shape)
+    print(y_true_arr.shape)
+
+    task1 = np.mean(metrics.roc_auc_score(y_true_arr, y_pred_arr))
+    print(f"ROC metric of task1: {task1}")
 
 
     ## SUBTASK 2: Sepsis prediction

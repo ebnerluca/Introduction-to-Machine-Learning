@@ -108,8 +108,9 @@ def binary_acc(y_pred, y_test):
 if __name__ == '__main__':
 
     print("Reading data...", end=" ", flush=True)
-    train_data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task1.csv", delimiter=",", skip_header=True)
-    train_labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)
+    train_data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task1.csv", delimiter=",",
+                               skip_header=True)[:, 1:]
+    train_labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,1:11]
     print("Done.")
 
     print(f"shape of train_data: {train_data.shape}")
@@ -146,8 +147,13 @@ if __name__ == '__main__':
 
             y_pred = model(X_batch)
 
-            loss = criterion(y_pred, y_batch.unsqueeze(1))
-            acc = binary_acc(y_pred, y_batch.unsqueeze(1))
+            y_pred = y_pred.reshape(-1,1)
+            y_batch = y_batch.reshape(-1,1)
+
+            #print(f"y_pred: {y_pred}")
+            #print(f"y_batch: {y_batch}")
+            loss = criterion(y_pred, y_batch)
+            acc = binary_acc(y_pred, y_batch)
 
             loss.backward()
             optimizer.step()
@@ -155,8 +161,7 @@ if __name__ == '__main__':
             epoch_loss += loss.item()
             epoch_acc += acc.item()
 
-            print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} '
-                  f'| Acc: {epoch_acc / len(train_loader):.3f}')
+        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
 
     ## SUBTASK 2: Sepsis prediction
 

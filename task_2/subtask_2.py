@@ -12,6 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+import sklearn.metrics as metrics
 
 
 class BinaryClassification(nn.Module):
@@ -182,9 +183,29 @@ if __name__ == '__main__':
         print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
               f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
 
+    #calculates the metric for the training set
+    y_true_arr = np.empty((0,1), float)
+    y_pred_arr = np.empty((0,1), float)
+    print(y_pred_arr.shape)
+    print(y_true_arr.shape)
+    with torch.no_grad():
+        for X_batch_inf, y_batch_true in train_loader:
 
-    ## SUBTASK 2: Sepsis prediction
+            X_batch_inf, y_batch_true = X_batch_inf.to(device), y_batch_true.to(device)
+            y_pred_inf = model(X_batch_inf)
 
-    ## SUBTASK 3: Key vital signs prediction
+            y_pred_inf = torch.sigmoid(y_pred_inf)
+            y_pred_tag = torch.round(y_pred_inf)
+            y_batch_true = np.asarray(y_batch_true).reshape((-1,1))
+            #print(y_batch_true.shape)
+            y_true_arr = np.vstack((y_true_arr, y_batch_true))
+            y_pred_arr = np.vstack((y_pred_arr, y_pred_tag.cpu().numpy()))
+            
+
+    print(y_pred_arr.shape)
+    print(y_true_arr.shape)
+
+    task2 = metrics.roc_auc_score(y_true_arr, y_pred_arr)
+    print(f"ROC metric of task2: {task2}")
 
     # np.savetxt("results.csv", weights, delimiter="\n")

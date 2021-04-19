@@ -12,6 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
+import sklearn.metrics as metrics
 
 
 class BinaryClassification(nn.Module):
@@ -183,8 +184,27 @@ if __name__ == '__main__':
               f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
 
 
-    ## SUBTASK 2: Sepsis prediction
+    #calculates the metric for the training set
+    y_true_arr = np.empty((0,4), float)
+    y_pred_arr = np.empty((0,4), float)
+    print(y_pred_arr.shape)
+    print(y_true_arr.shape)
+    with torch.no_grad():
+        for X_batch_inf, y_batch_true in train_loader:
 
-    ## SUBTASK 3: Key vital signs prediction
+            X_batch_inf, y_batch_true = X_batch_inf.to(device), y_batch_true.to(device)
+            y_pred_inf = model(X_batch_inf)
+
+            y_pred_inf = torch.sigmoid(y_pred_inf)
+            y_pred_tag = torch.round(y_pred_inf)
+            y_true_arr = np.append(y_true_arr, y_batch_true.cpu().numpy(), axis=0)
+            y_pred_arr = np.append(y_pred_arr, y_pred_tag.cpu().numpy(), axis=0)
+            
+
+    print(y_pred_arr.shape)
+    print(y_true_arr.shape)
+
+    task3 = np.mean(0.5 + 0.5 * np.maximum(0, metrics.r2_score(y_true_arr, y_pred_arr)))
+    print(f"Metric of task3: {task3}")
 
     # np.savetxt("results.csv", weights, delimiter="\n")

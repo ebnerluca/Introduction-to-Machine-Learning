@@ -19,28 +19,28 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 5*35.
 
-        n_inputs = 35*5
+        n_inputs = 4*5
         n_layer1 = 32
-        n_layer2 = 16
-        #n_layer3 = 32
-        #n_layer4 = 16
+        n_layer2 = 128
+        n_layer3 = 64
+        n_layer4 = 16
         #n_layer5 = 4
         n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
         self.layer_2 = nn.Linear(n_layer1, n_layer2)
-        #self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        #self.layer_4 = nn.Linear(n_layer3, n_layer4)
+        self.layer_3 = nn.Linear(n_layer2, n_layer3)
+        self.layer_4 = nn.Linear(n_layer3, n_layer4)
         #self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
-        self.layer_out = nn.Linear(n_layer2, n_outputs)
+        self.layer_out = nn.Linear(n_layer4, n_outputs)
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.1)
         self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
-        #self.batchnorm3 = nn.BatchNorm1d(n_layer3)
-        #self.batchnorm4 = nn.BatchNorm1d(n_layer4)
+        self.batchnorm3 = nn.BatchNorm1d(n_layer3)
+        self.batchnorm4 = nn.BatchNorm1d(n_layer4)
         #self.batchnorm5 = nn.BatchNorm1d(n_layer5)
 
 
@@ -49,10 +49,10 @@ class BinaryClassification(nn.Module):
         x = self.batchnorm1(x)
         x = self.relu(self.layer_2(x))
         x = self.batchnorm2(x)
-        #x = self.relu(self.layer_3(x))
-        #x = self.batchnorm3(x)
-        #x = self.relu(self.layer_4(x))
-        #x = self.batchnorm4(x)
+        x = self.relu(self.layer_3(x))
+        x = self.batchnorm3(x)
+        x = self.relu(self.layer_4(x))
+        x = self.batchnorm4(x)
         #x = self.relu(self.layer_5(x))
         #x = self.batchnorm5(x)
         x = self.dropout(x)
@@ -113,8 +113,13 @@ if __name__ == '__main__':
     if training_mode:
 
         print("Reading data...", end=" ", flush=True)
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
+        full_data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
+        temperature_data = full_data[:,25:30]
+        resprate_data = full_data[:,45:50]
+        abpm_data = full_data[:,100:105]
+        heartrate_data = full_data[:,160:165]
+        data = np.hstack([temperature_data, resprate_data, abpm_data, heartrate_data])
         labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
         print("Done.")
 

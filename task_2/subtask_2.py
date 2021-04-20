@@ -19,29 +19,29 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 5*35.
 
-        n_inputs = 4*5+1
-        n_layer1 = 16
-        n_layer2 = 32
-        n_layer3 = 16
-        #n_layer4 = 64
-        #n_layer5 = 32
+        n_inputs = 35*5
+        n_layer1 = 128
+        n_layer2 = 64
+        n_layer3 = 32
+        n_layer4 = 16
+        n_layer5 = 4
         n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
         self.layer_2 = nn.Linear(n_layer1, n_layer2)
         self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        #self.layer_4 = nn.Linear(n_layer3, n_layer4)
-        #self.layer_5 = nn.Linear(n_layer4, n_layer5)
+        self.layer_4 = nn.Linear(n_layer3, n_layer4)
+        self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
-        self.layer_out = nn.Linear(n_layer3, n_outputs)
+        self.layer_out = nn.Linear(n_layer5, n_outputs)
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.1)
         self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         self.batchnorm3 = nn.BatchNorm1d(n_layer3)
-        #self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        #self.batchnorm5 = nn.BatchNorm1d(n_layer5)
+        self.batchnorm4 = nn.BatchNorm1d(n_layer4)
+        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
 
 
     def forward(self, inputs):
@@ -51,10 +51,10 @@ class BinaryClassification(nn.Module):
         x = self.batchnorm2(x)
         x = self.relu(self.layer_3(x))
         x = self.batchnorm3(x)
-        """x = self.relu(self.layer_4(x))
+        x = self.relu(self.layer_4(x))
         x = self.batchnorm4(x)
         x = self.relu(self.layer_5(x))
-        x = self.batchnorm5(x)"""
+        x = self.batchnorm5(x)
         x = self.dropout(x)
         x = self.layer_out(x)
 
@@ -99,12 +99,12 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = False #True: training False: use for final solution
+    training_mode = True #True: training False: use for final solution
 
     if training_mode:
 
         print("Reading data...", end=" ", flush=True)
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task2.csv", delimiter=",",
+        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
         labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
         print("Done.")
@@ -121,9 +121,9 @@ if __name__ == '__main__':
         print(f"shape of test_data: {test_data.shape}")
         print(f"shape of test_labels: {test_labels.shape}")
 
-        EPOCHS = 35
-        BATCH_SIZE = 64
-        LEARNING_RATE = 0.001
+        EPOCHS = 50
+        BATCH_SIZE = 256
+        LEARNING_RATE = 0.0015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
@@ -224,11 +224,11 @@ if __name__ == '__main__':
     else:
 
         print("Reading data...", end=" ", flush=True)
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task2.csv", delimiter=",",
+        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
         labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
         print("Done.")
-        test = np.genfromtxt("data/preprocessed/test_features_preprocessed_task2.csv", delimiter=",",
+        test = np.genfromtxt("data/preprocessed/test_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
 
         train_data = data
@@ -239,9 +239,9 @@ if __name__ == '__main__':
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
 
-        EPOCHS = 35
-        BATCH_SIZE = 64
-        LEARNING_RATE = 0.001
+        EPOCHS = 50
+        BATCH_SIZE = 256
+        LEARNING_RATE = 0.0015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))

@@ -88,11 +88,12 @@ class TestData(Dataset):
 
 
 def binary_acc(y_pred, y_test):
-    y_pred_tag = torch.round(torch.sigmoid(y_pred))
+    #y_pred_tag = torch.round(torch.sigmoid(y_pred))
+    y_pred_tag = torch.sigmoid(y_pred)
 
-    correct_results_sum = (y_pred_tag == y_test).sum().float()
+    correct_results_sum = np.absolute(y_pred_tag.detach().numpy() - y_test.detach().numpy()).sum()
     acc = correct_results_sum / y_test.shape[0]
-    acc = torch.round(acc * 100)
+    #acc = torch.round(acc * 100)
 
     return acc
 
@@ -130,17 +131,17 @@ if __name__ == '__main__':
         #print(f"shape of test_labels: {test_labels.shape}")
 
 
-        EPOCHS = 50
+        EPOCHS = 200
         BATCH_SIZE = 256
-        LEARNING_RATE = 0.0015
+        LEARNING_RATE = 0.002
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         #test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        #test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()
@@ -208,15 +209,10 @@ if __name__ == '__main__':
                 y_pred_inf = model(X_batch_inf)
 
                 y_pred_inf = torch.sigmoid(y_pred_inf)
-                #y_pred_tag = torch.round(y_pred_inf)
-                y_pred_tag = y_pred_inf
-                y_true_arr = np.append(y_true_arr, y_batch_true.cpu().numpy(), axis=0)
-                y_pred_arr = np.append(y_pred_arr, y_pred_tag.cpu().numpy(), axis=0)
-                #y_pred_list.append(y_pred_tag.cpu().numpy())
-                #y_true_list.append(y_batch_true.cpu().numpy())
 
-                #print((y_pred_tag.cpu().numpy()).shape)
-                #print(y_batch_inf.numpy().shape)
+                y_true_arr = np.append(y_true_arr, y_batch_true.cpu().numpy(), axis=0)
+                y_pred_arr = np.append(y_pred_arr, y_pred_inf.cpu().numpy(), axis=0)
+
 
         print(y_pred_arr.shape)
         print(y_true_arr.shape)
@@ -228,11 +224,17 @@ if __name__ == '__main__':
 
         pids = pids.reshape((pids.shape[0], 1))
         output_array = np.hstack((pids, y_pred_arr))
+        #labels_array = np.hstack((pids, y_true_arr))
         output_path = "data/output/subtask_1_labels.csv"
+        #output_label = "data/output/subtask_1_regenrated_labels.csv"
         pd.DataFrame(output_array).to_csv(output_path,
                                         header=["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST", "LABEL_Alkalinephos",
                                                 "LABEL_Bilirubin_total","LABEL_Lactate","LABEL_TroponinI","LABEL_SaO2",
                                                 "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None, float_format="%.3f")
+        #pd.DataFrame(labels_array).to_csv(output_label,
+        #                                header=["pid", "LABEL_BaseExcess", "LABEL_Fibrinogen", "LABEL_AST", "LABEL_Alkalinephos",
+        #                                        "LABEL_Bilirubin_total","LABEL_Lactate","LABEL_TroponinI","LABEL_SaO2",
+        #                                        "LABEL_Bilirubin_direct","LABEL_EtCO2"], index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")
 
@@ -276,9 +278,9 @@ if __name__ == '__main__':
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()

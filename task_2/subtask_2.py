@@ -20,28 +20,28 @@ class BinaryClassification(nn.Module):
         super(BinaryClassification, self).__init__()  # Number of input features is 5*35.
 
         n_inputs = 35*5
-        n_layer1 = 128
-        n_layer2 = 64
-        n_layer3 = 32
-        n_layer4 = 16
-        n_layer5 = 4
+        n_layer1 = 32
+        n_layer2 = 16
+        #n_layer3 = 32
+        #n_layer4 = 16
+        #n_layer5 = 4
         n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
         self.layer_2 = nn.Linear(n_layer1, n_layer2)
-        self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        self.layer_4 = nn.Linear(n_layer3, n_layer4)
-        self.layer_5 = nn.Linear(n_layer4, n_layer5)
+        #self.layer_3 = nn.Linear(n_layer2, n_layer3)
+        #self.layer_4 = nn.Linear(n_layer3, n_layer4)
+        #self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
-        self.layer_out = nn.Linear(n_layer5, n_outputs)
+        self.layer_out = nn.Linear(n_layer2, n_outputs)
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.1)
         self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
-        self.batchnorm3 = nn.BatchNorm1d(n_layer3)
-        self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
+        #self.batchnorm3 = nn.BatchNorm1d(n_layer3)
+        #self.batchnorm4 = nn.BatchNorm1d(n_layer4)
+        #self.batchnorm5 = nn.BatchNorm1d(n_layer5)
 
 
     def forward(self, inputs):
@@ -49,12 +49,12 @@ class BinaryClassification(nn.Module):
         x = self.batchnorm1(x)
         x = self.relu(self.layer_2(x))
         x = self.batchnorm2(x)
-        x = self.relu(self.layer_3(x))
-        x = self.batchnorm3(x)
-        x = self.relu(self.layer_4(x))
-        x = self.batchnorm4(x)
-        x = self.relu(self.layer_5(x))
-        x = self.batchnorm5(x)
+        #x = self.relu(self.layer_3(x))
+        #x = self.batchnorm3(x)
+        #x = self.relu(self.layer_4(x))
+        #x = self.batchnorm4(x)
+        #x = self.relu(self.layer_5(x))
+        #x = self.batchnorm5(x)
         x = self.dropout(x)
         x = self.layer_out(x)
 
@@ -88,14 +88,23 @@ class TestData(Dataset):
 
 
 def binary_acc(y_pred, y_test):
-    y_pred_tag = torch.round(torch.sigmoid(y_pred))
+    ### Only take into account either predicted sepsis or actual sepsis entries
+    y_pred_tag = torch.sigmoid(y_pred)
 
-    correct_results_sum = (y_pred_tag == y_test).sum().float()
-    acc = correct_results_sum / y_test.shape[0]
-    acc = torch.round(acc * 100)
+    prediction_true_bool = (y_pred_tag >= 0.5).numpy()
+    truth_true_bool = (y_test == 1).numpy()
+    relevant_entries = np.clip(prediction_true_bool+truth_true_bool, 0, 1)
+    divider = relevant_entries.sum()
+
+    relevant_entries = np.multiply(relevant_entries, np.absolute(y_pred_tag.detach().numpy() - y_test.detach().numpy()))
+
+    correct_results_sum = relevant_entries.sum()
+
+
+    acc = correct_results_sum / divider
+    #acc = torch.round(acc * 100)
 
     return acc
-
 
 if __name__ == '__main__':
 
@@ -129,9 +138,9 @@ if __name__ == '__main__':
         minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()
@@ -247,9 +256,9 @@ if __name__ == '__main__':
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()

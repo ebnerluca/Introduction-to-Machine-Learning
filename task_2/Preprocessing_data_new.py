@@ -62,8 +62,8 @@ imp_median_2 = SimpleImputer(strategy='median')
 imp_median_2.fit(x_test_scaled)
 x_test_scaled_imputed = imp_median_2.transform(x_test_scaled)
 
-pd.DataFrame(x_train_scaled_imputed).to_csv('data/preprocessed/train_features_preprocessed_new.csv', index=False, header=False)
-pd.DataFrame(x_test_scaled_imputed).to_csv('data/preprocessed/test_features_preprocessed_new.csv', index=False, header=False)
+pd.DataFrame(x_train_scaled_imputed).to_csv('data/preprocessed/train_features_preprocessed_new.csv', index=False, header=True)
+pd.DataFrame(x_test_scaled_imputed).to_csv('data/preprocessed/test_features_preprocessed_new.csv', index=False, header=True)
 
 
 

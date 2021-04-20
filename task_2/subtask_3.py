@@ -134,9 +134,9 @@ if __name__ == '__main__':
         minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         #test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        # test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()
@@ -256,9 +256,9 @@ if __name__ == '__main__':
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         test_data = TestData(torch.FloatTensor(test_data))
 
-        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=True)
-        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=True)
+        train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
+        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model = BinaryClassification()

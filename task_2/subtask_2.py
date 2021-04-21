@@ -1,7 +1,4 @@
-from sklearn.model_selection import train_test_split
 import numpy as np
-# from numpy import genfromtxt
-# import math
 import pandas as pd
 
 import torch
@@ -108,20 +105,24 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = True #True: training False: use for final solution
+    training_mode = False #True: training False: use for final solution
+
+    print("Reading data...", end=" ", flush=True)
+    full_data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
+                               skip_header=True)
+    temperature_data = full_data[:,25:30]
+    resprate_data = full_data[:,45:50]
+    abpm_data = full_data[:,100:105]
+    heartrate_data = full_data[:,160:165]
+    data = np.hstack([temperature_data, resprate_data, abpm_data, heartrate_data])
+    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
+    print("Done.")
+
+    EPOCHS = 200
+    BATCH_SIZE = 256
+    LEARNING_RATE = 0.0015
 
     if training_mode:
-
-        print("Reading data...", end=" ", flush=True)
-        full_data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
-                                   skip_header=True)
-        temperature_data = full_data[:,25:30]
-        resprate_data = full_data[:,45:50]
-        abpm_data = full_data[:,100:105]
-        heartrate_data = full_data[:,160:165]
-        data = np.hstack([temperature_data, resprate_data, abpm_data, heartrate_data])
-        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
-        print("Done.")
 
         #split train data in train and test set
         testset_size = 4000
@@ -134,10 +135,6 @@ if __name__ == '__main__':
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
         print(f"shape of test_labels: {test_labels.shape}")
-
-        EPOCHS = 50
-        BATCH_SIZE = 256
-        LEARNING_RATE = 0.0015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
@@ -237,13 +234,13 @@ if __name__ == '__main__':
 
     else:
 
-        print("Reading data...", end=" ", flush=True)
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
+        test_full = np.genfromtxt("data/preprocessed/test_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
-        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
-        print("Done.")
-        test = np.genfromtxt("data/preprocessed/test_features_preprocessed_new.csv", delimiter=",",
-                                   skip_header=True)
+        temperature_data_test = test_full[:,25:30]
+        resprate_data_test = test_full[:,45:50]
+        abpm_data_test = test_full[:,100:105]
+        heartrate_data_test = test_full[:,160:165]
+        test = np.hstack([temperature_data_test, resprate_data_test, abpm_data_test, heartrate_data_test])
 
         train_data = data
         train_labels = labels
@@ -252,10 +249,6 @@ if __name__ == '__main__':
         print(f"shape of train_data: {train_data.shape}")
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
-
-        EPOCHS = 50
-        BATCH_SIZE = 256
-        LEARNING_RATE = 0.0015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
@@ -300,26 +293,7 @@ if __name__ == '__main__':
 
             print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
 
-            """model.eval()
-            test_epoch_acc = 0
-            for X_batch_test, y_batch_test in train_loader_test:
-
-                X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
-
-                y_pred_test = model(X_batch_test)
-
-                y_pred_test = y_pred_test.reshape(-1,1)
-                y_batch_test = y_batch_test.reshape(-1,1)
-
-                acc_test = binary_acc(y_pred_test, y_batch_test)
-
-                test_epoch_acc += acc_test.item()
-            # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
-            model.train()"""
-
-            #print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
-            #      f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
-
+        ### get the predictions
         model.eval()
 
         y_pred_arr = np.empty((0,1), float)
@@ -333,6 +307,7 @@ if __name__ == '__main__':
                 y_pred_tag = y_pred_inf
                 y_pred_arr = np.vstack((y_pred_arr, y_pred_tag.cpu().numpy()))
 
+        ### write predictions to csv
         output_array = y_pred_arr
         output_path = "data/output/subtask_2_labels.csv"
         pd.DataFrame(output_array).to_csv(output_path,

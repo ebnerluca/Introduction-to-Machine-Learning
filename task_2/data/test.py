@@ -1,3 +1,6 @@
+### test code taken from: https://github.com/yardenas/ethz-intro-ml/blob/master/project_2/project_2.ipynb
+
+
 import numpy as np
 import pandas as pd
 train_data = pd.read_csv('train_features.csv')

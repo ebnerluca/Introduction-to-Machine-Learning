@@ -1,7 +1,5 @@
-from sklearn.model_selection import train_test_split
+
 import numpy as np
-# from numpy import genfromtxt
-# import math
 import pandas as pd
 
 import torch
@@ -100,7 +98,11 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = True    #True: training False: use for final solution
+    training_mode = False    #True: training False: use for final solution
+
+    EPOCHS = 50
+    BATCH_SIZE = 256
+    LEARNING_RATE = 0.0015
 
     if training_mode:
 
@@ -136,11 +138,11 @@ if __name__ == '__main__':
         LEARNING_RATE = 0.002
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
-        #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
+        minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
         #test_data = TestData(torch.FloatTensor(test_data))
 
         train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=False)
-        #train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
+        train_loader_test = DataLoader(dataset=minitest_data, batch_size=BATCH_SIZE, shuffle=False)
         #test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -176,9 +178,9 @@ if __name__ == '__main__':
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
 
-            print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
+            #print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: {epoch_acc / len(train_loader):.3f}')
 
-            '''model.eval()
+            model.eval()
             test_epoch_acc = 0
             for X_batch_test, y_batch_test in train_loader_test:
     
@@ -193,10 +195,10 @@ if __name__ == '__main__':
     
                 test_epoch_acc += acc_test.item()
             # print(f'Epoch {e + 0:03}: | Test Acc: {epoch_acc / len(train_loader_test):.3f}')
-            model.train()'''
+            model.train()
 
-            #print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
-            #      f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test)}')
+            print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_loader):.5f} 'f'| Acc: '
+                  f'{epoch_acc / len(train_loader):.3f} 'f'| Test Acc: {test_epoch_acc / len(train_loader_test):.3f}')
 
         model.eval()
 
@@ -269,10 +271,6 @@ if __name__ == '__main__':
         print(f"shape of train_data: {train_data.shape}")
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
-
-        EPOCHS = 50
-        BATCH_SIZE = 256
-        LEARNING_RATE = 0.0015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))

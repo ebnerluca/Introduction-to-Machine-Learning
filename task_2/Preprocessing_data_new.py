@@ -10,6 +10,8 @@ from sklearn.impute import SimpleImputer
 #### helper functions
 ########################################################################################################################
 
+### Open source code taken from: https://github.com/yardenas/ethz-intro-ml/blob/master/project_2/project_2.ipynb
+
 def calculate_time_features(data, n_samples):
     x = []
     features = [np.nanmedian, np.nanmean, np.nanvar, np.nanmin,
@@ -46,21 +48,22 @@ test_data = pd.read_csv('data/test_features.csv')
 x_train = calculate_time_features(train_data.to_numpy(), 12)
 x_test = calculate_time_features(test_data.to_numpy(), 12)
 
-train_scaler = StandardScaler()
-train_scaler.fit(x_train)
-x_train_scaled = train_scaler.transform(x_train)
-
-test_scaler = StandardScaler()
-test_scaler.fit(x_test)
-x_test_scaled = train_scaler.transform(x_test)
-
 imp_median_1 = SimpleImputer(strategy='median')
-imp_median_1.fit(x_train_scaled)
-x_train_scaled_imputed = imp_median_1.transform(x_train_scaled)
+imp_median_1.fit(x_train)
+x_train_imputed = imp_median_1.transform(x_train)
 
 imp_median_2 = SimpleImputer(strategy='median')
-imp_median_2.fit(x_test_scaled)
-x_test_scaled_imputed = imp_median_2.transform(x_test_scaled)
+imp_median_2.fit(x_test)
+x_test_imputed = imp_median_2.transform(x_test)
+
+train_scaler = StandardScaler()
+train_scaler.fit(x_train_imputed)
+x_train_scaled_imputed = train_scaler.transform(x_train_imputed)
+
+test_scaler = StandardScaler()
+test_scaler.fit(x_test_imputed)
+x_test_scaled_imputed = train_scaler.transform(x_test_imputed)
+
 
 pd.DataFrame(x_train_scaled_imputed).to_csv('data/preprocessed/train_features_preprocessed_new.csv', index=False, header=True)
 pd.DataFrame(x_test_scaled_imputed).to_csv('data/preprocessed/test_features_preprocessed_new.csv', index=False, header=True)

@@ -1,7 +1,5 @@
-from sklearn.model_selection import train_test_split
+
 import numpy as np
-# from numpy import genfromtxt
-# import math
 import pandas as pd
 
 import torch
@@ -99,20 +97,21 @@ def binary_acc(y_pred, y_test):
 
 if __name__ == '__main__':
 
-    training_mode = True  #True: training False: use for final solution
+    training_mode = False  #True: training False: use for final solution
+
+    print("Reading data...", end=" ", flush=True)
+    #data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task3.csv", delimiter=",",
+    #                           skip_header=True)
+    data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
+                                skip_header=True)
+    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,12:16]
+    print("Done.")
+
+    EPOCHS = 50
+    BATCH_SIZE = 64
+    LEARNING_RATE = 0.015
 
     if training_mode:
-
-        print("Reading data...", end=" ", flush=True)
-        #data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task3.csv", delimiter=",",
-        #                           skip_header=True)
-
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
-                                    skip_header=True)
-
-        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,12:16]
-
-        print("Done.")
 
         #split train data in train and test set
         testset_size = 4000
@@ -125,10 +124,6 @@ if __name__ == '__main__':
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
         print(f"shape of test_labels: {test_labels.shape}")
-
-        EPOCHS = 50
-        BATCH_SIZE = 64
-        LEARNING_RATE = 0.015
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))
@@ -228,15 +223,6 @@ if __name__ == '__main__':
 
     else:
 
-        print("Reading data...", end=" ", flush=True)
-        """data = np.genfromtxt("data/preprocessed/train_features_preprocessed_task3.csv", delimiter=",",
-                                   skip_header=True)"""
-        data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
-                                    skip_header=True)
-        labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,12:16]
-        print("Done.")
-
-
         test = np.genfromtxt("data/preprocessed/test_features_preprocessed_new.csv", delimiter=",",
                                    skip_header=True)
 
@@ -247,10 +233,6 @@ if __name__ == '__main__':
         print(f"shape of train_data: {train_data.shape}")
         print(f"shape of train_labels: {train_labels.shape}")
         print(f"shape of test_data: {test_data.shape}")
-
-        EPOCHS = 20
-        BATCH_SIZE = 64
-        LEARNING_RATE = 0.001
 
         train_data = TrainData(torch.FloatTensor(train_data), torch.FloatTensor(train_labels))
         #minitest_data = TrainData(torch.FloatTensor(test_data), torch.FloatTensor(test_labels))

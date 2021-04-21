@@ -18,9 +18,9 @@ class BinaryClassification(nn.Module):
         n_inputs = 35*5
         n_layer1 = 128
         n_layer2 = 128
-        n_layer3 = 64
-        n_layer4 = 64
-        n_layer5 = 32
+        n_layer3 = 128
+        n_layer4 = 128
+        n_layer5 = 128
         n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
@@ -32,7 +32,7 @@ class BinaryClassification(nn.Module):
         self.layer_out = nn.Linear(n_layer5, n_outputs)
 
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=0.5)
         self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         self.batchnorm3 = nn.BatchNorm1d(n_layer3)
@@ -43,12 +43,16 @@ class BinaryClassification(nn.Module):
     def forward(self, inputs):
         x = self.relu(self.layer_1(inputs))
         x = self.batchnorm1(x)
+        x = self.dropout(x)
         x = self.relu(self.layer_2(x))
         x = self.batchnorm2(x)
+        x = self.dropout(x)
         x = self.relu(self.layer_3(x))
         x = self.batchnorm3(x)
+        x = self.dropout(x)
         x = self.relu(self.layer_4(x))
         x = self.batchnorm4(x)
+        x = self.dropout(x)
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         x = self.dropout(x)
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     labels = labels[:,1:]
     print("Done.")
 
-    training_mode = False
+    training_mode = True
 
     ### trying neural net approach
     data = np.float32(data)
@@ -88,7 +92,7 @@ if __name__ == '__main__':
             criterion=nn.BCEWithLogitsLoss,
             optimizer=optim.Adam, 
             max_epochs=5,
-            lr=0.002,
+            lr=0.01,
         )
 
         ### calculate cross validation score for training mode

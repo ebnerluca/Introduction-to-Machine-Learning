@@ -9,11 +9,11 @@ import sklearn.metrics as metrics
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from skorch import NeuralNetClassifier
+from skorch import NeuralNetRegressor, dataset
 
-class BinaryClassification(nn.Module):
+class RegressionNetwork(nn.Module):
     def __init__(self):
-        super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
+        super(RegressionNetwork, self).__init__()  # Number of input features is 4*5+1.
 
         n_inputs = 35*5
         n_layer1 = 128
@@ -21,7 +21,7 @@ class BinaryClassification(nn.Module):
         n_layer3 = 128
         n_layer4 = 128
         #n_layer5 = 32
-        n_outputs = 4
+        n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
         self.layer_2 = nn.Linear(n_layer1, n_layer2)
@@ -62,45 +62,58 @@ if __name__ == '__main__':
     print("Reading data...", end=" ", flush=True)
     data = np.genfromtxt("data/preprocessed/train_features_preprocessed_new.csv", delimiter=",",
                                skip_header=True)
-    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,11]
+    labels = np.genfromtxt("data/train_labels.csv", delimiter=",", skip_header=True)[:,12:16]
     test = np.genfromtxt("data/preprocessed/test_features_preprocessed_new.csv", delimiter=",",
                                 skip_header=True)
     print("Done.")
 
-    training_mode = True
-
-    ### cross validation of the data
-    '''classifier = HistGradientBoostingClassifier()
-
-    scores = cross_val_score(classifier, data, labels, cv=5, scoring='roc_auc', verbose=True)
-    print("Cross-Validation score {score:.3f},"
-          " Standard Deviation {err:.3f}"
-          .format(score = scores.mean(), err = scores.std()))'''
+    training_mode = False
 
     ### trying neural net approach
-    classifier = NeuralNetClassifier(
-        BinaryClassification,
-        criterion=nn.BCEWithLogitsLoss,
-        optimizer=optim.Adam, 
-        max_epochs=5,
-        lr=0.0015,
-    )
-    scores = cross_val_score(classifier, np.float32(data), np.expand_dims(np.float32(labels), axis=1),
-                                 cv=5, scoring='roc_auc', verbose=True)
-    print("Cross-Validation score {score:.3f},"
-          " Standard Deviation {err:.3f}"
-          .format(score = scores.mean(), err = scores.std()))
+    data = np.float32(data)
+    test = np.float32(test)
+    labels = np.float32(labels)
+    mean_score = 0
 
-    ### fit with the training set and generate test set output
-    if training_mode == False:
+    test_sample_size = test.shape[0]
+    output_array = np.empty((test_sample_size,0), float)
 
-        classifier = classifier.fit(data, labels)
-        predictions = classifier.predict_proba(test)[:, 1]
-        print("Training score:", metrics.roc_auc_score(labels, classifier.predict_proba(data)[:, 1]))
+    for i in range(4):
 
-        output_array = predictions
-        output_path = "data/output/subtask_2_new_labels.csv"
+        label = np.expand_dims(labels[:,i], axis=1)
+
+        regressor = NeuralNetRegressor(
+            RegressionNetwork,
+            criterion=nn.MSELoss,
+            optimizer=optim.Adam,
+            train_split=dataset.CVSplit(5, stratified=False), 
+            max_epochs=5,
+            lr=0.015,
+        )
+
+        ### calculate cross validation score for training mode
+        if training_mode:
+
+            scores = cross_val_score(regressor, data, label, cv=5, scoring='r2', verbose=True)
+            hand_in_metric = 0.5 + 0.5 * np.maximum(0, scores.mean())
+            print("Cross-Validation score {score:.3f},"
+                  .format(score = hand_in_metric))
+            mean_score += hand_in_metric
+
+        ### generate output if not
+        else:
+            regressor = regressor.fit(data, label)
+            predictions = regressor.predict(test)
+            training_score = 0.5 + 0.5 * np.maximum(0, metrics.r2_score(label, regressor.predict(data)))
+            print("Training score:", training_score)
+            output_array = np.hstack((output_array, predictions))
+
+    if training_mode:
+        print(f"Hand in metric score is: {mean_score/4}")
+    else:
+        output_path = "data/output/subtask_3_new_labels.csv"
         pd.DataFrame(output_array).to_csv(output_path,
-                                            header=["LABEL_Sepsis"], index=None, float_format="%.3f")
+                                          header=["LABEL_RRate", "LABEL_ABPm", "LABEL_SpO2", "LABEL_Heartrate"],
+                                          index=None, float_format="%.3f")
 
         print(f"Predicted labels saved to {output_path}.")

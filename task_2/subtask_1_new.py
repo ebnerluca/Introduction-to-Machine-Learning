@@ -73,7 +73,7 @@ if __name__ == '__main__':
     labels = labels[:,1:]
     print("Done.")
 
-    training_mode = True
+    training_mode = False
 
     ### trying neural net approach
     data = np.float32(data)

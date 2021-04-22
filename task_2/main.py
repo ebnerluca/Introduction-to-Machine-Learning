@@ -4,9 +4,9 @@ import numpy as np
 output_file = "data/output/hand_in.csv"
 output_zip = "hand_in.zip"
 
-subtask_1_labels = np.genfromtxt("data/output/subtask_1_labels.csv", delimiter=",", skip_header=True)
-subtask_2_labels = np.genfromtxt("data/output/subtask_2_labels.csv", delimiter=",", skip_header=True)
-subtask_3_labels = np.genfromtxt("data/output/subtask_3_labels.csv", delimiter=",", skip_header=True)
+subtask_1_labels = np.genfromtxt("data/output/subtask_1_new_labels.csv", delimiter=",", skip_header=True)
+subtask_2_labels = np.genfromtxt("data/output/subtask_2_new_labels.csv", delimiter=",", skip_header=True)
+subtask_3_labels = np.genfromtxt("data/output/subtask_3_new_labels.csv", delimiter=",", skip_header=True)
 
 subtask_2_labels = subtask_2_labels.reshape((subtask_2_labels.shape[0], 1))
 

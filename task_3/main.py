@@ -25,7 +25,7 @@ X_train = encoder.fit_transform(feature_separation(train_data))
 X_test = encoder.transform(feature_separation(test_data))
 y_train = train_data['Active'].to_numpy()
 
-classifier = HistGradientBoostingClassifier()
+classifier = HistGradientBoostingClassifier(learning_rate=0.21, max_iter=200, max_leaf_nodes=100, min_samples_leaf=100, scoring='f1')
 scores = cross_val_score(classifier, X_train, y_train, cv=10, scoring='f1', verbose=True)
 
 print("Cross-Validation score {score:.3f},"

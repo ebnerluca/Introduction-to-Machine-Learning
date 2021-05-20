@@ -6,6 +6,7 @@ import torch.optim as optim
 import torchvision.models
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
+
 # import matplotlib.pyplot as plt
 
 
@@ -16,14 +17,18 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = False  # features don't need to be recomputed at each run
+compute_features = True  # features don't need to be recomputed at each run
 features_path = "data/features.txt"
 
 # prediction
-train_mode = True
+# train_mode = True
 learning_rate = 0.015
-epochs = 30
+epochs = 20
 batch_size = 64
+
+# output
+test_labels_path = "data/test_labels.txt"
+
 
 ################
 
@@ -156,7 +161,7 @@ if __name__ == '__main__':
     train_labels = np.ones(train_triplets.shape[0])
     print(f"train_triplets shape: {train_triplets.shape}")
 
-    test_triplets = np.loadtxt("data/test_triplets.txt",dtype=int)
+    test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
     print(f"test_triplets shape: {test_triplets.shape}")
 
     # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
@@ -166,24 +171,32 @@ if __name__ == '__main__':
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
             train_labels[i] = 0
-    # split train_triplets in train_test_triplets and train_triplets
 
-    train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1]*encoder_features))
+    train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
         train_triplets_features[i] = np.hstack((features[train_triplets[i, 0]],
                                                 features[train_triplets[i, 1]],
                                                 features[train_triplets[i, 2]]))
     print(f"train_triplets_features shape: {train_triplets_features.shape}")
 
-    # Data Loader
+    test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
+    for i in range(test_triplets.shape[0]):
+        test_triplets_features[i] = np.hstack((features[test_triplets[i, 0]],
+                                               features[test_triplets[i, 1]],
+                                               features[test_triplets[i, 2]]))
+    print(f"test_triplets_features shape: {test_triplets_features.shape}")
+
+    # Data Loader, split train_triplets in train_test_triplets and train_triplets
     train_data = TrainData(torch.FloatTensor(train_triplets_features), torch.FloatTensor(train_labels))
-    split = torch.utils.data.random_split(train_data, [int(0.8 * len(train_data)), len(train_data) - int(0.8 * len(train_data))])
+    split = torch.utils.data.random_split(train_data,
+                                          [int(0.8 * len(train_data)), len(train_data) - int(0.8 * len(train_data))])
     train_data = split[0]
     train_test_data = split[1]
-    # test_data = TestData(torch.FloatTensor(test_triplets))
     train_data_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     train_test_data_loader = DataLoader(train_test_data, batch_size=batch_size, shuffle=False)
-    # test_data_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
+    test_data = TestData(torch.FloatTensor(test_triplets_features))
+    test_data_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = BinaryClassification()
@@ -231,25 +244,35 @@ if __name__ == '__main__':
         model.eval()
         binary_acc_train_test = 0
 
-        for X_batch_test, y_batch_test in train_test_data_loader:
-            X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
+        for X_batch_train_test, y_batch_train_test in train_test_data_loader:
+            X_batch_train_test, y_batch_train_test = X_batch_train_test.to(device), y_batch_train_test.to(device)
 
-            y_pred_test = model(X_batch_test)
+            y_pred_train_test = model(X_batch_train_test)
 
-            y_pred_test = y_pred_test.reshape(-1, 1)
-            y_batch_test = y_batch_test.reshape(-1, 1)
+            y_pred_test = y_pred_train_test.reshape(-1, 1)
+            y_batch_train_test = y_batch_train_test.reshape(-1, 1)
 
-            binary_acc_train_test += binary_acc(y_pred_test, y_batch_test)
+            binary_acc_train_test += binary_acc(y_pred_test, y_batch_train_test)
 
         print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_data_loader):.5f} | '
               f'Acc: {epoch_acc / len(train_data_loader):.3f} | '
               f'Binary Acc: {binary_acc_train / len(train_data_loader):.2f}% | '
               f'Binary Acc (Train Test): {binary_acc_train_test / len(train_test_data_loader):.2f}%')
 
+    # Predict labels for test set
+    model.eval()
+    test_labels = np.zeros((0, 1))
+    for X_batch_test in test_data_loader:
+        X_batch_test = X_batch_test.to(device)
+
+        y_pred_test = model(X_batch_test)
+        y_pred_test = y_pred_test.reshape(-1, 1)
+
+        test_labels = np.vstack((test_labels, y_pred_test.cpu().detach().numpy()))
+
+    print(f"test_labels shape: {test_labels.shape}")
+    print("Saving test_labels...")
+    test_labels = np.round(test_labels)
+    np.savetxt(test_labels_path, test_labels.astype(int), fmt="%i")
+
     print("All finished")
-
-
-
-
-
-

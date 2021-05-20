@@ -21,9 +21,9 @@ features_path = "data/features.txt"
 
 # prediction
 train_mode = True
-learning_rate = 0.0075
-epochs = 40
-batch_size = 128
+learning_rate = 0.015
+epochs = 30
+batch_size = 64
 
 ################
 
@@ -32,21 +32,22 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
-        n_inputs = 3 * encoder_features
-        n_layer1 = encoder_features
-        n_layer2 = int(encoder_features / 2)
-        n_layer3 = 128
-        n_layer4 = 64
-        # n_layer5 = 32
+        n_inputs = 3 * encoder_features  # 3000
+        n_layer1 = 2 * encoder_features
+        n_layer2 = int(encoder_features / 1)
+        n_layer3 = int(encoder_features / 2)
+        n_layer4 = int(encoder_features / 8)
+        n_layer5 = 1
         n_outputs = 1
 
         self.layer_1 = nn.Linear(n_inputs, n_layer1)
         self.layer_2 = nn.Linear(n_layer1, n_layer2)
         self.layer_3 = nn.Linear(n_layer2, n_layer3)
         self.layer_4 = nn.Linear(n_layer3, n_layer4)
-        #self.layer_5 = nn.Linear(n_layer4, n_layer5)
+        self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
-        self.layer_out = nn.Linear(n_layer4, n_outputs)
+        # self.layer_out = nn.Linear(n_layer4, n_outputs)
+        self.layer_out = nn.Sigmoid()
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.1)
@@ -54,7 +55,7 @@ class BinaryClassification(nn.Module):
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         self.batchnorm3 = nn.BatchNorm1d(n_layer3)
         self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        #self.batchnorm5 = nn.BatchNorm1d(n_layer5)
+        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
 
     def forward(self, inputs):
         x = self.relu(self.layer_1(inputs))
@@ -65,9 +66,9 @@ class BinaryClassification(nn.Module):
         x = self.batchnorm3(x)
         x = self.relu(self.layer_4(x))
         x = self.batchnorm4(x)
-        """x = self.relu(self.layer_5(x))
-        x = self.batchnorm5(x)"""
-        x = self.dropout(x)
+        x = self.relu(self.layer_5(x))
+        x = self.batchnorm5(x)
+        # x = self.dropout(x)
         x = self.layer_out(x)
         return x
 
@@ -130,6 +131,17 @@ def preprocessing():
     return features
 
 
+def binary_acc(predictions, labels):
+    # map predictions to binary 0 or 1
+    # predictions = torch.round(torch.sigmoid(predictions))
+    predictions = torch.round(predictions)
+    correct_results_sum = (predictions == labels).sum().float()
+    binary_acc = correct_results_sum / labels.shape[0]
+    binary_acc = torch.round(binary_acc * 100)
+
+    return binary_acc
+
+
 if __name__ == '__main__':
 
     if compute_features:
@@ -154,6 +166,7 @@ if __name__ == '__main__':
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
             train_labels[i] = 0
+    # split train_triplets in train_test_triplets and train_triplets
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1]*encoder_features))
     for i in range(train_triplets.shape[0]):
@@ -164,8 +177,12 @@ if __name__ == '__main__':
 
     # Data Loader
     train_data = TrainData(torch.FloatTensor(train_triplets_features), torch.FloatTensor(train_labels))
+    split = torch.utils.data.random_split(train_data, [int(0.8 * len(train_data)), len(train_data) - int(0.8 * len(train_data))])
+    train_data = split[0]
+    train_test_data = split[1]
     # test_data = TestData(torch.FloatTensor(test_triplets))
     train_data_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
+    train_test_data_loader = DataLoader(train_test_data, batch_size=batch_size, shuffle=False)
     # test_data_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -175,17 +192,22 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    train_predictions = np.zeros((len(train_triplets), 1))
     model.train()
     for e in range(1, epochs + 1):
         epoch_loss = 0
         epoch_acc = 0
+        binary_acc_train = 0
 
+        # training
+        model.train()
         for X_batch, y_batch in train_data_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
 
             optimizer.zero_grad()
 
             y_pred = model(X_batch)
+            # print(f"y_pred: {y_pred}")
 
             y_pred = y_pred.reshape(-1, 1)
             y_batch = y_batch.reshape(-1, 1)
@@ -199,7 +221,30 @@ if __name__ == '__main__':
             epoch_loss += loss.item()
             epoch_acc += acc
 
-        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_data_loader):.5f} 'f'| Acc: {epoch_acc / len(train_data_loader):.3f}')
+            binary_acc_train += binary_acc(y_pred, y_batch)
+
+        """print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_data_loader):.5f} | '
+              f'Acc: {epoch_acc / len(train_data_loader):.3f} | '
+              f'Binary Acc: {binary_acc_train / len(train_data_loader):.3f}%')"""
+
+        # eval
+        model.eval()
+        binary_acc_train_test = 0
+
+        for X_batch_test, y_batch_test in train_test_data_loader:
+            X_batch_test, y_batch_test = X_batch_test.to(device), y_batch_test.to(device)
+
+            y_pred_test = model(X_batch_test)
+
+            y_pred_test = y_pred_test.reshape(-1, 1)
+            y_batch_test = y_batch_test.reshape(-1, 1)
+
+            binary_acc_train_test += binary_acc(y_pred_test, y_batch_test)
+
+        print(f'Epoch {e + 0:03}: | Loss: {epoch_loss / len(train_data_loader):.5f} | '
+              f'Acc: {epoch_acc / len(train_data_loader):.3f} | '
+              f'Binary Acc: {binary_acc_train / len(train_data_loader):.2f}% | '
+              f'Binary Acc (Train Test): {binary_acc_train_test / len(train_test_data_loader):.2f}%')
 
     print("All finished")
 

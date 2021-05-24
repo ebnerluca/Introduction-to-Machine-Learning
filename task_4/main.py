@@ -17,7 +17,7 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = False  # features don't need to be recomputed at each run
+compute_features = True  # features don't need to be recomputed at each run
 features_path = "data/features.txt"
 
 # prediction
@@ -113,7 +113,9 @@ def preprocessing():
     """Computes features from images by using a pretrained classifier."""
 
     transform = transforms.Compose([transforms.Resize(img_size),
-                                    transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    transforms.RandomHorizontalFlip(p=0.5),
+                                    transforms.RandomVerticalFlip(p=0.5),
+                                    transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                                 std=[0.229, 0.224, 0.225])])
     images = datasets.ImageFolder("data", transform=transform)
     image_loader = DataLoader(images, batch_size=image_loader_batch_size, shuffle=False)

@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from skorch import NeuralNetClassifier, dataset
 from sklearn.model_selection import cross_val_score
 import sklearn.metrics as metrics
+from sklearn.metrics import make_scorer
 
 # import matplotlib.pyplot as plt
 
@@ -22,19 +23,18 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = True  # features don't need to be recomputed at each run
+compute_features = False  # features don't need to be recomputed at each run
 training_mode = True     # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
 learning_rate = 0.01
-epochs = 5
+epochs = 8
 # batch_size = 128
 
 # output
 test_labels_path = "data/test_labels.txt"
-
 
 ################
 
@@ -149,13 +149,13 @@ def preprocessing():
     return features
 
 
-def binary_acc(predictions, labels):
+def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
-    # predictions = torch.round(torch.sigmoid(predictions))
-    predictions = torch.round(predictions)
-    correct_results_sum = (predictions == labels).sum().float()
+    # predictions = np.round(torch.sigmoid(predictions))
+    predictions = np.round_(predictions)
+    correct_results_sum = (predictions == labels).sum()
     binary_acc = correct_results_sum / labels.shape[0]
-    binary_acc = torch.round(binary_acc * 100)
+    binary_acc = np.round_(binary_acc * 100)
 
     return binary_acc
 
@@ -171,19 +171,31 @@ if __name__ == '__main__':
 
     # Read Data
     train_triplets = np.loadtxt("data/train_triplets.txt", dtype=int)
-    train_labels = np.ones(train_triplets.shape[0])
-    print(f"train_triplets shape: {train_triplets.shape}")
+    train_triplets_switched = np.loadtxt("data/train_triplets.txt", dtype=int)
+    train_labels = np.ones(train_triplets.shape[0]).reshape((train_triplets.shape[0], 1))
+    train_labels_switched = np.zeros(train_triplets_switched.shape[0]).reshape((train_triplets_switched.shape[0], 1))
 
-    #test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
-    #print(f"test_triplets shape: {test_triplets.shape}")
+    for i in range(len(train_triplets_switched)):
+        train_triplets_switched[i] = np.asarray([train_triplets_switched[i, 0],
+                                                 train_triplets_switched[i, 2],
+                                                 train_triplets_switched[i, 1]])
+
+    train_triplets = np.vstack((train_triplets, train_triplets_switched))
+    train_labels = np.vstack((train_labels, train_labels_switched))
+
+    print(f"train_triplets shape: {train_triplets.shape}")
+    print(f"train_labels shape: {train_labels.shape}")
+
+    # test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
+    # print(f"test_triplets shape: {test_triplets.shape}")
 
     # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
-    for i in range(len(train_triplets)):
+    """for i in range(len(train_triplets)):
         shuffle = bool(np.random.randint(0, 2))  # random True or False
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
-            train_labels[i] = 0
+            train_labels[i] = 0"""
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
@@ -194,7 +206,7 @@ if __name__ == '__main__':
     print(f"train_labels shape: {train_labels.shape}")
     train_triplets_features = np.float32(train_triplets_features)
     train_labels = np.float32(train_labels)
-    train_labels = np.expand_dims(train_labels, axis=1)
+    # train_labels = np.expand_dims(train_labels, axis=1)
 
     #test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
     #for i in range(test_triplets.shape[0]):
@@ -218,13 +230,12 @@ if __name__ == '__main__':
     )
 
     ### calculate cross validation score for training mode
-    mean_score = 0
+    custom_scorer = make_scorer(binary_acc, greater_is_better=True)
     if training_mode:
-        scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring='accuracy', verbose=True)
+        scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring=custom_scorer, verbose=True)
         print("Cross-Validation score {score:.3f},"
               " Standard Deviation {err:.3f}"
               .format(score = scores.mean(), err = scores.std()))
-        mean_score += scores.mean()
 
     ### generate output if not
     else:

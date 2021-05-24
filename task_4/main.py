@@ -17,14 +17,14 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = True  # features don't need to be recomputed at each run
+compute_features = False  # features don't need to be recomputed at each run
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
-learning_rate = 0.015
-epochs = 20
-batch_size = 64
+learning_rate = 0.007
+epochs = 10
+batch_size = 128
 
 # output
 test_labels_path = "data/test_labels.txt"
@@ -112,11 +112,15 @@ class TestData(Dataset):
 def preprocessing():
     """Computes features from images by using a pretrained classifier."""
 
-    transform = transforms.Compose([transforms.Resize(img_size),
+    """transform = transforms.Compose([transforms.Resize(img_size),
                                     transforms.RandomHorizontalFlip(p=0.5),
                                     transforms.RandomVerticalFlip(p=0.5),
                                     transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                std=[0.229, 0.224, 0.225])])
+                                                                                std=[0.229, 0.224, 0.225])])"""
+    transform = transforms.Compose([transforms.Resize(img_size),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
     images = datasets.ImageFolder("data", transform=transform)
     image_loader = DataLoader(images, batch_size=image_loader_batch_size, shuffle=False)
 
@@ -165,19 +169,35 @@ if __name__ == '__main__':
 
     # Read Data
     train_triplets = np.loadtxt("data/train_triplets.txt", dtype=int)
-    train_labels = np.ones(train_triplets.shape[0])
-    print(f"train_triplets shape: {train_triplets.shape}")
+    train_triplets_switched = np.loadtxt("data/train_triplets.txt", dtype=int)
+    train_labels = np.ones(train_triplets.shape[0]).reshape((train_triplets.shape[0], 1))
+    train_labels_switched = np.zeros(train_triplets_switched.shape[0]).reshape((train_triplets_switched.shape[0], 1))
 
     test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
     print(f"test_triplets shape: {test_triplets.shape}")
 
     # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
-    for i in range(len(train_triplets)):
+    """for i in range(len(train_triplets)):
         shuffle = bool(np.random.randint(0, 2))  # random True or False
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
-            train_labels[i] = 0
+            train_labels[i] = 0"""
+
+    for i in range(len(train_triplets_switched)):
+        train_triplets_switched[i] = np.asarray([train_triplets_switched[i, 0],
+                                                 train_triplets_switched[i, 2],
+                                                 train_triplets_switched[i, 1]])
+
+    train_triplets = np.vstack((train_triplets, train_triplets_switched))
+    train_labels = np.vstack((train_labels, train_labels_switched))
+    """train_data = np.hstack((train_triplets, train_labels))
+    np.random.shuffle(train_data)
+    train_triplets = train_data[:, :3].astype(int)
+    train_labels = train_data[:, 3]"""
+
+    print(f"train_triplets shape: {train_triplets.shape}")
+    print(f"train_labels shape: {train_labels.shape}")
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
@@ -199,7 +219,7 @@ if __name__ == '__main__':
                                           [int(0.8 * len(train_data)), len(train_data) - int(0.8 * len(train_data))])
     train_data = split[0]
     train_test_data = split[1]
-    train_data_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
+    train_data_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     train_test_data_loader = DataLoader(train_test_data, batch_size=batch_size, shuffle=False)
 
     test_data = TestData(torch.FloatTensor(test_triplets_features))
@@ -209,7 +229,9 @@ if __name__ == '__main__':
     model = BinaryClassification()
     model.to(device)
 
-    criterion = nn.MSELoss()
+    # criterion = nn.MSELoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     train_predictions = np.zeros((len(train_triplets), 1))

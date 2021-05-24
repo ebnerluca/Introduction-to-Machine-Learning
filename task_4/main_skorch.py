@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from skorch import NeuralNetClassifier, dataset
 from sklearn.model_selection import cross_val_score
 import sklearn.metrics as metrics
+from sklearn.metrics import make_scorer
 
 # import matplotlib.pyplot as plt
 
@@ -58,7 +59,7 @@ class BinaryClassification(nn.Module):
         self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
         # self.layer_out = nn.Linear(n_layer4, n_outputs)
-        self.layer_out = nn.Sigmoid()
+        #self.layer_out = nn.Sigmoid()
 
         self.relu = nn.ReLU()
         self.dropout_02 = nn.Dropout(p=0.2)
@@ -85,7 +86,7 @@ class BinaryClassification(nn.Module):
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         # x = self.dropout(x)
-        x = self.layer_out(x)
+        #x = self.layer_out(x)
         return x
 
 
@@ -149,13 +150,13 @@ def preprocessing():
     return features
 
 
-def binary_acc(predictions, labels):
+def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
     # predictions = torch.round(torch.sigmoid(predictions))
-    predictions = torch.round(predictions)
-    correct_results_sum = (predictions == labels).sum().float()
+    predictions = np.round_(predictions)
+    correct_results_sum = (predictions == labels).sum()
     binary_acc = correct_results_sum / labels.shape[0]
-    binary_acc = torch.round(binary_acc * 100)
+    binary_acc = np.round_(binary_acc * 100)
 
     return binary_acc
 
@@ -211,17 +212,16 @@ if __name__ == '__main__':
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,
-        device='cpu'
+        device='cuda'
     )
 
     ### calculate cross validation score for training mode
-    mean_score = 0
+    custom_scorer = make_scorer(binary_acc, greater_is_better=True)
     if training_mode:
-        scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring='accuracy', verbose=True)
+        scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring=custom_scorer, verbose=True)
         print("Cross-Validation score {score:.3f},"
               " Standard Deviation {err:.3f}"
               .format(score = scores.mean(), err = scores.std()))
-        mean_score += scores.mean()
 
     ### generate output if not
     else:

@@ -17,7 +17,7 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = True  # features don't need to be recomputed at each run
+compute_features = False  # features don't need to be recomputed at each run
 features_path = "data/features.txt"
 
 # prediction
@@ -55,7 +55,8 @@ class BinaryClassification(nn.Module):
         self.layer_out = nn.Sigmoid()
 
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout_02 = nn.Dropout(p=0.2)
+        self.dropout_05 = nn.Dropout(p=0.5)
         self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         self.batchnorm3 = nn.BatchNorm1d(n_layer3)
@@ -65,12 +66,16 @@ class BinaryClassification(nn.Module):
     def forward(self, inputs):
         x = self.relu(self.layer_1(inputs))
         x = self.batchnorm1(x)
+        x = self.dropout_02(x)
         x = self.relu(self.layer_2(x))
         x = self.batchnorm2(x)
+        x = self.dropout_05(x)
         x = self.relu(self.layer_3(x))
         x = self.batchnorm3(x)
+        x = self.dropout_05(x)
         x = self.relu(self.layer_4(x))
         x = self.batchnorm4(x)
+        x = self.dropout_05(x)
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         # x = self.dropout(x)

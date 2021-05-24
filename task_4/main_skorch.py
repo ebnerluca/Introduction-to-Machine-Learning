@@ -22,15 +22,15 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = False  # features don't need to be recomputed at each run
+compute_features = True  # features don't need to be recomputed at each run
 training_mode = True     # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
-learning_rate = 0.015
+learning_rate = 0.01
 epochs = 5
-batch_size = 64
+# batch_size = 128
 
 # output
 test_labels_path = "data/test_labels.txt"
@@ -119,8 +119,8 @@ def preprocessing():
     """Computes features from images by using a pretrained classifier."""
 
     transform = transforms.Compose([transforms.Resize(img_size),
-                                    transforms.RandomHorizontalFlip(p=0.5),
-                                    transforms.RandomVerticalFlip(p=0.5),
+                                    # transforms.RandomHorizontalFlip(p=0.5),
+                                    # transforms.RandomVerticalFlip(p=0.5),
                                     transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                                 std=[0.229, 0.224, 0.225])])
     images = datasets.ImageFolder("data", transform=transform)
@@ -203,15 +203,18 @@ if __name__ == '__main__':
     #                                           features[test_triplets[i, 2]]))
     #print(f"test_triplets_features shape: {test_triplets_features.shape}")
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+
     # skorch
     classifier = NeuralNetClassifier(
         BinaryClassification,
         train_split=dataset.CVSplit(5, stratified=False),
-        criterion=nn.BCEWithLogitsLoss,
+        criterion=nn.BCELoss,
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,
-        device='cpu'
+        device=device
     )
 
     ### calculate cross validation score for training mode

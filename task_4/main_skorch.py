@@ -24,13 +24,13 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = True     # if true, output file is not generated
+training_mode = False     # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
 learning_rate = 0.01
-epochs = 8
+epochs = 2
 # batch_size = 128
 
 # output
@@ -58,7 +58,7 @@ class BinaryClassification(nn.Module):
         self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
         # self.layer_out = nn.Linear(n_layer4, n_outputs)
-        self.layer_out = nn.Sigmoid()
+        # self.layer_out = nn.Sigmoid()
 
         self.relu = nn.ReLU()
         self.dropout_02 = nn.Dropout(p=0.2)
@@ -85,7 +85,7 @@ class BinaryClassification(nn.Module):
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         # x = self.dropout(x)
-        x = self.layer_out(x)
+        # x = self.layer_out(x)
         return x
 
 
@@ -180,22 +180,22 @@ if __name__ == '__main__':
                                                  train_triplets_switched[i, 2],
                                                  train_triplets_switched[i, 1]])
 
-    train_triplets = np.vstack((train_triplets, train_triplets_switched))
-    train_labels = np.vstack((train_labels, train_labels_switched))
+    '''train_triplets = np.vstack((train_triplets, train_triplets_switched))
+    train_labels = np.vstack((train_labels, train_labels_switched))'''
 
     print(f"train_triplets shape: {train_triplets.shape}")
     print(f"train_labels shape: {train_labels.shape}")
 
-    # test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
-    # print(f"test_triplets shape: {test_triplets.shape}")
+    test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
+    print(f"test_triplets shape: {test_triplets.shape}")
 
     # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
-    """for i in range(len(train_triplets)):
+    for i in range(len(train_triplets)):
         shuffle = bool(np.random.randint(0, 2))  # random True or False
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
-            train_labels[i] = 0"""
+            train_labels[i] = 0
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
@@ -206,27 +206,28 @@ if __name__ == '__main__':
     print(f"train_labels shape: {train_labels.shape}")
     train_triplets_features = np.float32(train_triplets_features)
     train_labels = np.float32(train_labels)
-    # train_labels = np.expand_dims(train_labels, axis=1)
+    #train_labels = np.expand_dims(train_labels, axis=1)
 
-    #test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
-    #for i in range(test_triplets.shape[0]):
-    #    test_triplets_features[i] = np.hstack((features[test_triplets[i, 0]],
-    #                                           features[test_triplets[i, 1]],
-    #                                           features[test_triplets[i, 2]]))
-    #print(f"test_triplets_features shape: {test_triplets_features.shape}")
+    test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
+    for i in range(test_triplets.shape[0]):
+        test_triplets_features[i] = np.hstack((features[test_triplets[i, 0]],
+                                               features[test_triplets[i, 1]],
+                                               features[test_triplets[i, 2]]))
+    print(f"test_triplets_features shape: {test_triplets_features.shape}")
+    test_triplets_features = np.float32(test_triplets_features)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
     # skorch
     classifier = NeuralNetClassifier(
         BinaryClassification,
         train_split=dataset.CVSplit(5, stratified=False),
-        criterion=nn.BCELoss,
+        criterion=nn.BCEWithLogitsLoss,
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,
-        device=device
+        device='cuda'
     )
 
     ### calculate cross validation score for training mode
@@ -239,9 +240,9 @@ if __name__ == '__main__':
 
     ### generate output if not
     else:
-        '''classifier = classifier.fit(data, label)
-        predictions = classifier.predict_proba(test)[:, 1]
-        print("Training score:", metrics.roc_auc_score(label, classifier.predict_proba(data)[:, 1]))
-        output_array = np.hstack((output_array, predictions))'''
+        classifier = classifier.fit(train_triplets_features, train_labels)
+        predictions = classifier.predict_proba(test_triplets_features)[:,1]
+        predictions = np.around(predictions)
+        np.savetxt(test_labels_path, predictions.astype(int), fmt="%i")
 
 

@@ -58,7 +58,7 @@ class BinaryClassification(nn.Module):
         self.layer_5 = nn.Linear(n_layer4, n_layer5)
 
         # self.layer_out = nn.Linear(n_layer4, n_outputs)
-        self.layer_out = nn.Sigmoid()
+        # self.layer_out = nn.Sigmoid()
 
         self.relu = nn.ReLU()
         self.dropout_02 = nn.Dropout(p=0.2)
@@ -85,7 +85,7 @@ class BinaryClassification(nn.Module):
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         # x = self.dropout(x)
-        x = self.layer_out(x)
+        # x = self.layer_out(x)
         return x
 
 
@@ -152,6 +152,8 @@ def preprocessing():
 def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
     # predictions = np.round(torch.sigmoid(predictions))
+    print(f"labels: {labels}")
+    print(f"predictions: {predictions}")
     predictions = np.round_(predictions)
     correct_results_sum = (predictions == labels).sum()
     binary_acc = correct_results_sum / labels.shape[0]
@@ -182,6 +184,11 @@ if __name__ == '__main__':
 
     train_triplets = np.vstack((train_triplets, train_triplets_switched))
     train_labels = np.vstack((train_labels, train_labels_switched))
+
+    train_data = np.hstack((train_triplets, train_labels))
+    np.random.shuffle(train_data)
+    train_triplets = train_data[:, :3].reshape(train_triplets.shape).astype(int)
+    train_labels = train_data[:, 3].reshape(train_labels.shape[0], 1)
 
     print(f"train_triplets shape: {train_triplets.shape}")
     print(f"train_labels shape: {train_labels.shape}")
@@ -222,7 +229,7 @@ if __name__ == '__main__':
     classifier = NeuralNetClassifier(
         BinaryClassification,
         train_split=dataset.CVSplit(5, stratified=False),
-        criterion=nn.BCELoss,
+        criterion=nn.BCEWithLogitsLoss,
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,

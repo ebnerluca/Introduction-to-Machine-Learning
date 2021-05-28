@@ -24,14 +24,14 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = True     # if true, output file is not generated
+training_mode = True    # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
 learning_rate = 0.01
-epochs = 15
-# batch_size = 128
+epochs = 10
+batch_size = 128
 
 # output
 test_labels_path = "data/test_labels.txt"
@@ -233,6 +233,7 @@ if __name__ == '__main__':
         criterion=nn.BCEWithLogitsLoss,
         optimizer=optim.Adam, 
         max_epochs=epochs,
+        batch_size=batch_size,
         lr=learning_rate,
         device='cuda'
     )

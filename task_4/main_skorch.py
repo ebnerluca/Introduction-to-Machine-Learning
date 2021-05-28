@@ -24,13 +24,13 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = False     # if true, output file is not generated
+training_mode = True     # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
-learning_rate = 0.01
-epochs = 2
+learning_rate = 0.007
+epochs = 8
 # batch_size = 128
 
 # output
@@ -43,47 +43,82 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
-        n_inputs = 3 * encoder_features  # 3000
-        n_layer1 = 2 * encoder_features
-        n_layer2 = int(encoder_features / 1)
-        n_layer3 = int(encoder_features / 2)
-        n_layer4 = int(encoder_features / 8)
-        n_layer5 = 1
-        n_outputs = 1
+        n_inputs = 1 * encoder_features  # 1000
+        n_layer1 = 200
+        n_layer2 = 100
+        n_layer3 = 30 # 50 outputs
+        #self.relu = nn.ReLU()
 
-        self.layer_1 = nn.Linear(n_inputs, n_layer1)
-        self.layer_2 = nn.Linear(n_layer1, n_layer2)
-        self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        self.layer_4 = nn.Linear(n_layer3, n_layer4)
-        self.layer_5 = nn.Linear(n_layer4, n_layer5)
+        self.feature0 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.2),
+            nn.Linear(n_layer1, n_layer2),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer2),
+            nn.Dropout(p=0.5),
+            nn.Linear(n_layer2, n_layer3),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer3),
+        )
+        self.feature1 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.2),
+            nn.Linear(n_layer1, n_layer2),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer2),
+            nn.Dropout(p=0.5),
+            nn.Linear(n_layer2, n_layer3),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer3),
+        )
+        self.feature2 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.2),
+            nn.Linear(n_layer1, n_layer2),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer2),
+            nn.Dropout(p=0.5),
+            nn.Linear(n_layer2, n_layer3),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer3),
+        )
 
+        self.merge = nn.Linear(3*n_layer3,1)
+        self.relu = nn.ReLU()
+        self.batchnorm_merge = nn.BatchNorm1d(1)
+        #self.layer_1 = nn.Linear(n_inputs, n_layer1)
+        #self.layer_2 = nn.Linear(n_layer1, n_layer2)
+        #self.layer_3 = nn.Linear(n_layer2, n_layer3)
         # self.layer_out = nn.Linear(n_layer4, n_outputs)
         # self.layer_out = nn.Sigmoid()
+        #self.relu = nn.ReLU()
+        #self.dropout_02 = nn.Dropout(p=0.2)
+        #self.dropout_05 = nn.Dropout(p=0.5)
+        #self.batchnorm1 = nn.BatchNorm1d(n_layer1)
+        #self.batchnorm2 = nn.BatchNorm1d(n_layer2)
+        #self.batchnorm3 = nn.BatchNorm1d(n_layer3)
 
-        self.relu = nn.ReLU()
-        self.dropout_02 = nn.Dropout(p=0.2)
-        self.dropout_05 = nn.Dropout(p=0.5)
-        self.batchnorm1 = nn.BatchNorm1d(n_layer1)
-        self.batchnorm2 = nn.BatchNorm1d(n_layer2)
-        self.batchnorm3 = nn.BatchNorm1d(n_layer3)
-        self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
-
+    
     def forward(self, inputs):
-        x = self.relu(self.layer_1(inputs))
-        x = self.batchnorm1(x)
-        x = self.dropout_02(x)
-        x = self.relu(self.layer_2(x))
-        x = self.batchnorm2(x)
-        x = self.dropout_05(x)
-        x = self.relu(self.layer_3(x))
-        x = self.batchnorm3(x)
-        x = self.dropout_05(x)
-        x = self.relu(self.layer_4(x))
-        x = self.batchnorm4(x)
-        x = self.dropout_05(x)
-        x = self.relu(self.layer_5(x))
-        x = self.batchnorm5(x)
+        #print(f"input size: {inputs.shape}")
+        input_split = torch.split(inputs, 1000, dim=1)
+        input_split = list(input_split)
+        #print(f"input split size: {input_split[0].shape}") 
+
+        x0 = self.feature0(input_split[0])
+        x1 = self.feature1(input_split[1])
+        x2 = self.feature2(input_split[2])
+
+        x = torch.cat((x0,x1,x2), dim=1)
+        x = self.relu(self.merge(x))
+        x = self.batchnorm_merge(x)
+
         # x = self.dropout(x)
         # x = self.layer_out(x)
         return x
@@ -227,7 +262,7 @@ if __name__ == '__main__':
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,
-        device='cuda'
+        device=device
     )
 
     ### calculate cross validation score for training mode

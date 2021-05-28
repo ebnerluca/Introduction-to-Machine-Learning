@@ -44,62 +44,76 @@ class BinaryClassification(nn.Module):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
         n_inputs = 1 * encoder_features  # 1000
-        n_layer1 = 200
-        n_layer2 = 100
-        n_layer3 = 30 # 50 outputs
+        n_layer1 = 500
+        #n_layer2 = 100
+        #n_layer3 = 30 # 50 outputs
         #self.relu = nn.ReLU()
 
         self.feature0 = nn.Sequential(
+            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            nn.Dropout(p=0.2),
-            nn.Linear(n_layer1, n_layer2),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer2),
-            nn.Dropout(p=0.5),
-            nn.Linear(n_layer2, n_layer3),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer3),
+            #nn.Dropout(p=0.2),
+            #nn.Linear(n_layer1, n_layer2),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer2),
+            #nn.Dropout(p=0.5),
+            #nn.Linear(n_layer2, n_layer3),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer3),
         )
         self.feature1 = nn.Sequential(
+            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            nn.Dropout(p=0.2),
-            nn.Linear(n_layer1, n_layer2),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer2),
-            nn.Dropout(p=0.5),
-            nn.Linear(n_layer2, n_layer3),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer3),
+            #nn.Dropout(p=0.2),
+            #nn.Linear(n_layer1, n_layer2),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer2),
+            #nn.Dropout(p=0.5),
+            #nn.Linear(n_layer2, n_layer3),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer3),
         )
         self.feature2 = nn.Sequential(
+            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            nn.Dropout(p=0.2),
-            nn.Linear(n_layer1, n_layer2),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer2),
-            nn.Dropout(p=0.5),
-            nn.Linear(n_layer2, n_layer3),
-            nn.ReLU(),
-            nn.BatchNorm1d(n_layer3),
+            #nn.Dropout(p=0.2),
+            #nn.Linear(n_layer1, n_layer2),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer2),
+            #nn.Dropout(p=0.5),
+            #nn.Linear(n_layer2, n_layer3),
+            #nn.ReLU(),
+            #nn.BatchNorm1d(n_layer3),
         )
 
-        self.merge = nn.Linear(3*n_layer3,1)
+        merge_n1 = 3*n_layer1
+        merge_n2 = 500
+        merge_n3 = 250
+        merge_n4 = 50
+
+        self.merge_l1 = nn.Linear(merge_n1,merge_n2)
+        self.merge_l2 = nn.Linear(merge_n2,merge_n3)
+        self.merge_l3 = nn.Linear(merge_n3,merge_n4)
+        self.merge_l4 = nn.Linear(merge_n4,1)
         self.relu = nn.ReLU()
-        self.batchnorm_merge = nn.BatchNorm1d(1)
+        self.batchnorm_merge_l1 = nn.BatchNorm1d(merge_n2)
+        self.batchnorm_merge_l2 = nn.BatchNorm1d(merge_n3)
+        self.batchnorm_merge_l3 = nn.BatchNorm1d(merge_n4)
+        self.batchnorm_merge_l4 = nn.BatchNorm1d(1)
         #self.layer_1 = nn.Linear(n_inputs, n_layer1)
         #self.layer_2 = nn.Linear(n_layer1, n_layer2)
         #self.layer_3 = nn.Linear(n_layer2, n_layer3)
         # self.layer_out = nn.Linear(n_layer4, n_outputs)
         # self.layer_out = nn.Sigmoid()
         #self.relu = nn.ReLU()
-        #self.dropout_02 = nn.Dropout(p=0.2)
-        #self.dropout_05 = nn.Dropout(p=0.5)
+        self.dropout_02 = nn.Dropout(p=0.2)
+        self.dropout_05 = nn.Dropout(p=0.5)
         #self.batchnorm1 = nn.BatchNorm1d(n_layer1)
         #self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         #self.batchnorm3 = nn.BatchNorm1d(n_layer3)
@@ -116,8 +130,18 @@ class BinaryClassification(nn.Module):
         x2 = self.feature2(input_split[2])
 
         x = torch.cat((x0,x1,x2), dim=1)
-        x = self.relu(self.merge(x))
-        x = self.batchnorm_merge(x)
+
+        x = self.relu(self.merge_l1(x))
+        x = self.batchnorm_merge_l1(x)
+        x = self.dropout_02(x)
+        x = self.relu(self.merge_l2(x))
+        x = self.batchnorm_merge_l2(x)
+        x = self.dropout_05(x)
+        x = self.relu(self.merge_l3(x))
+        x = self.batchnorm_merge_l3(x)
+        x = self.dropout_05(x)
+        x = self.relu(self.merge_l4(x))
+        x = self.batchnorm_merge_l4(x)
 
         # x = self.dropout(x)
         # x = self.layer_out(x)

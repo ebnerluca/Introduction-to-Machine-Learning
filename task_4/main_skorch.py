@@ -23,9 +23,12 @@ n_images = 10000
 img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = False  # features don't need to be recomputed at each run
+compute_features = True  # features don't need to be recomputed at each run
 training_mode = False     # if true, output file is not generated
 features_path = "data/features.txt"
+features_path_VF = "data/features_VF.txt"
+features_path_HF = "data/features_HF.txt"
+features_path_HF_VF = "data/features_HF_VF.txt"
 
 # prediction
 # train_mode = True
@@ -119,12 +122,41 @@ def preprocessing():
     """Computes features from images by using a pretrained classifier."""
 
     transform = transforms.Compose([transforms.Resize(img_size),
-                                    # transforms.RandomHorizontalFlip(p=0.5),
-                                    # transforms.RandomVerticalFlip(p=0.5),
-                                    transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                std=[0.229, 0.224, 0.225])])
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                         std=[0.229, 0.224, 0.225])])
+
+    transform_VF = transforms.Compose([transforms.Resize(img_size),
+                                       transforms.RandomHorizontalFlip(p=0),
+                                       transforms.RandomVerticalFlip(p=1),
+                                       transforms.ToTensor(),
+                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                            std=[0.229, 0.224, 0.225])])
+
+    transform_HF = transforms.Compose([transforms.Resize(img_size),
+                                       transforms.RandomHorizontalFlip(p=1),
+                                       transforms.RandomVerticalFlip(p=0),
+                                       transforms.ToTensor(),
+                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                            std=[0.229, 0.224, 0.225])])
+
+    transform_HF_VF = transforms.Compose([transforms.Resize(img_size),
+                                          transforms.RandomHorizontalFlip(p=1),
+                                          transforms.RandomVerticalFlip(p=1),
+                                          transforms.ToTensor(),
+                                          transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                               std=[0.229, 0.224, 0.225])])
+
     images = datasets.ImageFolder("data", transform=transform)
+    images_VF = datasets.ImageFolder("data", transform=transform_VF)
+    images_HF = datasets.ImageFolder("data", transform=transform_HF)
+    images_HF_VF = datasets.ImageFolder("data", transform=transform_HF_VF)
+
     image_loader = DataLoader(images, batch_size=image_loader_batch_size, shuffle=False)
+    image_loader_VF = DataLoader(images_VF, batch_size=image_loader_batch_size, shuffle=False)
+    image_loader_HF = DataLoader(images_HF, batch_size=image_loader_batch_size, shuffle=False)
+    image_loader_HF_VF = DataLoader(images_HF_VF, batch_size=image_loader_batch_size, shuffle=False)
+
 
     # Model for feature predictions
     classifier_model = torchvision.models.mobilenet_v3_small(pretrained=True, progress=True)
@@ -134,6 +166,8 @@ def preprocessing():
     print(f"Device: {device}")
 
     # Compute features by using pretrained model
+
+    ### NORMAL
     features = np.zeros((0, encoder_features))
     iter = 0
     for image_batch in image_loader:
@@ -146,8 +180,44 @@ def preprocessing():
     print(f"\nComputing features done. Saving features under {str(features_path)}")
     np.savetxt(features_path, features)
 
-    return features
+    ### VERICAL FLIP
+    features_VF = np.zeros((0, encoder_features))
+    iter_VF = 0
+    for image_batch in image_loader_VF:
+        print(f"Computing features_VF... {iter} / {n_images}", end="\r")  # , flush=True)
+        image_batch = image_batch[0]  # get rid of target classes
+        image_batch = image_batch.to(device)
+        features_batch = classifier_model(image_batch)
+        features_VF = np.vstack((features_VF, features_batch.cpu().detach().numpy()))
+        iter_VF = iter_VF + image_loader_batch_size
+    print(f"\nComputing features_VF done. Saving features under {str(features_path_VF)}")
+    np.savetxt(features_path_VF, features_VF)
 
+    ### HORICONTAL FLIP
+    features_HF = np.zeros((0, encoder_features))
+    iter_HF = 0
+    for image_batch in image_loader_HF:
+        print(f"Computing features_HF... {iter} / {n_images}", end="\r")  # , flush=True)
+        image_batch = image_batch[0]  # get rid of target classes
+        image_batch = image_batch.to(device)
+        features_batch = classifier_model(image_batch)
+        features_HF = np.vstack((features_HF, features_batch.cpu().detach().numpy()))
+        iter_HF = iter_HF + image_loader_batch_size
+    print(f"\nComputing features_HF done. Saving features under {str(features_path_HF)}")
+    np.savetxt(features_path_VF, features_HF)
+
+    ### HORICONTAL + VERTICAL FLIP
+    features_HF_VF = np.zeros((0, encoder_features))
+    iter_HF_VF = 0
+    for image_batch in image_loader_HF_VF:
+        print(f"Computing features_HF_VF... {iter} / {n_images}", end="\r")  # , flush=True)
+        image_batch = image_batch[0]  # get rid of target classes
+        image_batch = image_batch.to(device)
+        features_batch = classifier_model(image_batch)
+        features_HF_VF = np.vstack((features_VF, features_batch.cpu().detach().numpy()))
+        iter_HF_VF = iter_HF_VF + image_loader_batch_size
+    print(f"\nComputing features_HF done. Saving features under {str(features_path_HF_VF)}")
+    np.savetxt(features_path_VF, features_HF_VF)
 
 def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
@@ -163,11 +233,17 @@ def binary_acc(labels, predictions):
 if __name__ == '__main__':
 
     if compute_features:
-        features = preprocessing()
-    else:
-        print("Loading features...")
-        features = np.loadtxt(features_path)
-        print("Loading features done.")
+        preprocessing()
+
+    print("Loading features...")
+    features = np.loadtxt(features_path)
+    features_HF = np.loadtxt(features_path_HF)
+    features_VF = np.loadtxt(features_path_VF)
+    features_HF_VF = np.loadtxt(features_path_HF_VF)
+    print("Loading features done.")
+
+    # stack features
+    features_list = [features, features_HF, features_VF, features_HF_VF]
 
     # Read Data
     train_triplets = np.loadtxt("data/train_triplets.txt", dtype=int)
@@ -199,9 +275,9 @@ if __name__ == '__main__':
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
-        train_triplets_features[i] = np.hstack((features[train_triplets[i, 0]],
-                                                features[train_triplets[i, 1]],
-                                                features[train_triplets[i, 2]]))
+        train_triplets_features[i] = np.hstack((features_list[np.random.randint(0, 4)][train_triplets[i, 0]],
+                                                features_list[np.random.randint(0, 4)][train_triplets[i, 1]],
+                                                features_list[np.random.randint(0, 4)][train_triplets[i, 2]]))
     print(f"train_triplets_features shape: {train_triplets_features.shape}")
     print(f"train_labels shape: {train_labels.shape}")
     train_triplets_features = np.float32(train_triplets_features)
@@ -210,9 +286,9 @@ if __name__ == '__main__':
 
     test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
     for i in range(test_triplets.shape[0]):
-        test_triplets_features[i] = np.hstack((features[test_triplets[i, 0]],
-                                               features[test_triplets[i, 1]],
-                                               features[test_triplets[i, 2]]))
+        test_triplets_features[i] = np.hstack((features_list[np.random.randint(0, 4)][test_triplets[i, 0]],
+                                               features_list[np.random.randint(0, 4)][test_triplets[i, 1]],
+                                               features_list[np.random.randint(0, 4)][test_triplets[i, 2]]))
     print(f"test_triplets_features shape: {test_triplets_features.shape}")
     test_triplets_features = np.float32(test_triplets_features)
 

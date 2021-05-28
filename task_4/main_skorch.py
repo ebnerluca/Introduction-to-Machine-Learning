@@ -24,13 +24,13 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = False     # if true, output file is not generated
+training_mode = True     # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
 learning_rate = 0.01
-epochs = 2
+epochs = 15
 # batch_size = 128
 
 # output
@@ -44,10 +44,10 @@ class BinaryClassification(nn.Module):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
         n_inputs = 3 * encoder_features  # 3000
-        n_layer1 = 2 * encoder_features
-        n_layer2 = int(encoder_features / 1)
-        n_layer3 = int(encoder_features / 2)
-        n_layer4 = int(encoder_features / 8)
+        n_layer1 = 1 * encoder_features
+        n_layer2 = int(encoder_features / 2)
+        n_layer3 = int(encoder_features / 4)
+        n_layer4 = int(encoder_features / 16)
         n_layer5 = 1
         n_outputs = 1
 
@@ -152,8 +152,8 @@ def preprocessing():
 def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
     # predictions = np.round(torch.sigmoid(predictions))
-    print(f"labels: {labels}")
-    print(f"predictions: {predictions}")
+    # print(f"labels: {labels}")
+    # print(f"predictions: {predictions}")
     predictions = np.round_(predictions)
     correct_results_sum = (predictions == labels).sum()
     binary_acc = correct_results_sum / labels.shape[0]
@@ -182,8 +182,8 @@ if __name__ == '__main__':
                                                  train_triplets_switched[i, 2],
                                                  train_triplets_switched[i, 1]])
 
-    '''train_triplets = np.vstack((train_triplets, train_triplets_switched))
-    train_labels = np.vstack((train_labels, train_labels_switched))'''
+    train_triplets = np.vstack((train_triplets, train_triplets_switched))
+    train_labels = np.vstack((train_labels, train_labels_switched))
 
     train_data = np.hstack((train_triplets, train_labels))
     np.random.shuffle(train_data)
@@ -198,11 +198,11 @@ if __name__ == '__main__':
 
     # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
-    for i in range(len(train_triplets)):
+    """for i in range(len(train_triplets)):
         shuffle = bool(np.random.randint(0, 2))  # random True or False
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
-            train_labels[i] = 0
+            train_labels[i] = 0"""
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):

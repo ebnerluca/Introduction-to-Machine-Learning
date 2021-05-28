@@ -24,14 +24,14 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = True    # if true, output file is not generated
+training_mode = False  # if true, output file is not generated
 features_path = "data/features.txt"
 
 # prediction
 # train_mode = True
-learning_rate = 0.01
-epochs = 10
-batch_size = 128
+learning_rate = 0.008
+epochs = 2
+batch_size = 512
 
 # output
 test_labels_path = "data/test_labels.txt"
@@ -43,7 +43,7 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
-        n_inputs = 3 * encoder_features  # 3000
+        """n_inputs = 3 * encoder_features  # 3000
         n_layer1 = 1 * encoder_features
         n_layer2 = int(encoder_features / 2)
         n_layer3 = int(encoder_features / 4)
@@ -67,10 +67,32 @@ class BinaryClassification(nn.Module):
         self.batchnorm2 = nn.BatchNorm1d(n_layer2)
         self.batchnorm3 = nn.BatchNorm1d(n_layer3)
         self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
+        self.batchnorm5 = nn.BatchNorm1d(n_layer5)"""
+
+
+        #### small
+        n_inputs = 3000
+        n_layer1 = 128
+        n_layer2 = 128
+        n_layer3 = 128
+        n_outputs = 1
+
+        self.layer_1 = nn.Linear(n_inputs, n_layer1)
+        self.layer_2 = nn.Linear(n_layer1, n_layer2)
+        self.layer_3 = nn.Linear(n_layer2, n_layer3)
+        self.layer_out = nn.Linear(n_layer3, n_outputs)
+
+        self.relu = nn.ReLU()
+        self.dropout_02 = nn.Dropout(p=0.2)
+        self.dropout_05 = nn.Dropout(p=0.5)
+        self.batchnorm1 = nn.BatchNorm1d(n_layer1)
+        self.batchnorm2 = nn.BatchNorm1d(n_layer2)
+        self.batchnorm3 = nn.BatchNorm1d(n_layer3)
+        ####
+
 
     def forward(self, inputs):
-        x = self.relu(self.layer_1(inputs))
+        """x = self.relu(self.layer_1(inputs))
         x = self.batchnorm1(x)
         x = self.dropout_02(x)
         x = self.relu(self.layer_2(x))
@@ -85,7 +107,20 @@ class BinaryClassification(nn.Module):
         x = self.relu(self.layer_5(x))
         x = self.batchnorm5(x)
         # x = self.dropout(x)
-        # x = self.layer_out(x)
+        # x = self.layer_out(x)"""
+
+        ### small
+        x = self.relu(self.layer_1(inputs))
+        x = self.batchnorm1(x)
+        x = self.dropout_02(x)
+        x = self.relu(self.layer_2(x))
+        x = self.batchnorm2(x)
+        x = self.dropout_05(x)
+        x = self.relu(self.layer_3(x))
+        x = self.batchnorm3(x)
+        x = self.dropout_05(x)
+        x = self.layer_out(x)
+        ###
         return x
 
 

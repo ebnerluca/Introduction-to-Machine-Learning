@@ -20,10 +20,10 @@ from sklearn.metrics import make_scorer
 
 # preprocessing
 n_images = 10000
-img_size = (224, 224)
-image_loader_batch_size = 32
+img_size = (300, 300)
+image_loader_batch_size = 16
 encoder_features = 1000  # dependant on output of classifier
-compute_features = False  # features don't need to be recomputed at each run
+compute_features = True  # features don't need to be recomputed at each run
 training_mode = True    # if true, output file is not generated
 features_path = "data/features.txt"
 features_path_VF = "data/features_VF.txt"
@@ -261,13 +261,13 @@ if __name__ == '__main__':
 
     print("Loading features...")
     features = np.loadtxt(features_path)
-    # features_HF = np.loadtxt(features_path_HF)
+    features_HF = np.loadtxt(features_path_HF)
     # features_VF = np.loadtxt(features_path_VF)
     # features_HF_VF = np.loadtxt(features_path_HF_VF)
     print("Loading features done.")
 
     # stack features
-    features_list = [features, features, features, features]
+    features_list = [features, features, features_HF, features_HF]
 
     # Read Data
     train_triplets = np.loadtxt("data/train_triplets.txt", dtype=int)
@@ -317,9 +317,9 @@ if __name__ == '__main__':
     if training_mode == False:
         test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
         for i in range(test_triplets.shape[0]):
-            test_triplets_features[i] = np.hstack((features_list[np.random.randint(0, 4)][test_triplets[i, 0]],
-                                                   features_list[np.random.randint(0, 4)][test_triplets[i, 1]],
-                                                   features_list[np.random.randint(0, 4)][test_triplets[i, 2]]))
+            test_triplets_features[i] = np.hstack((features_list[0][test_triplets[i, 0]],
+                                                   features_list[0][test_triplets[i, 1]],
+                                                   features_list[0][test_triplets[i, 2]]))
         print(f"test_triplets_features shape: {test_triplets_features.shape}")
         test_triplets_features = np.float32(test_triplets_features)
 

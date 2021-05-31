@@ -46,49 +46,71 @@ class BinaryClassification(nn.Module):
     def __init__(self):
         super(BinaryClassification, self).__init__()  # Number of input features is 4*5+1.
 
-        n_inputs = 3 * encoder_features  # 3000
-        n_layer1 = 1 * encoder_features
-        n_layer2 = int(encoder_features / 2)
-        n_layer3 = int(encoder_features / 4)
-        n_layer4 = int(encoder_features / 16)
-        n_layer5 = 1
-        n_outputs = 1
+        n_inputs = 1 * encoder_features  # 1000
+        n_layer1 = 500
 
-        self.layer_1 = nn.Linear(n_inputs, n_layer1)
-        self.layer_2 = nn.Linear(n_layer1, n_layer2)
-        self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        self.layer_4 = nn.Linear(n_layer3, n_layer4)
-        self.layer_5 = nn.Linear(n_layer4, n_layer5)
+        self.feature0 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.5),
+        )
+        self.feature1 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.5),
+        )
+        self.feature2 = nn.Sequential(
+            nn.Linear(n_inputs, n_layer1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_layer1),
+            nn.Dropout(p=0.5),
+        )
 
-        # self.layer_out = nn.Linear(n_layer4, n_outputs)
-        # self.layer_out = nn.Sigmoid()
+        merge_n1 = 3*n_layer1
+        merge_n2 = 128
+        merge_n3 = 128
+        merge_n4 = 50
 
+        self.merge_l1 = nn.Linear(merge_n1,merge_n2)
+        self.merge_l2 = nn.Linear(merge_n2,merge_n3)
+        self.merge_l3 = nn.Linear(merge_n3,merge_n4)
+        self.merge_l4 = nn.Linear(merge_n4,1)
         self.relu = nn.ReLU()
+        self.batchnorm_merge_l1 = nn.BatchNorm1d(merge_n2)
+        self.batchnorm_merge_l2 = nn.BatchNorm1d(merge_n3)
+        self.batchnorm_merge_l3 = nn.BatchNorm1d(merge_n4)
+        self.batchnorm_merge_l4 = nn.BatchNorm1d(1)
+        
         self.dropout_02 = nn.Dropout(p=0.2)
-        self.dropout_05 = nn.Dropout(p=0.5)
-        self.batchnorm1 = nn.BatchNorm1d(n_layer1)
-        self.batchnorm2 = nn.BatchNorm1d(n_layer2)
-        self.batchnorm3 = nn.BatchNorm1d(n_layer3)
-        self.batchnorm4 = nn.BatchNorm1d(n_layer4)
-        self.batchnorm5 = nn.BatchNorm1d(n_layer5)
+        self.dropout_05 = nn.Dropout(p=0.5)     
 
+    
     def forward(self, inputs):
-        x = self.relu(self.layer_1(inputs))
-        x = self.batchnorm1(x)
-        x = self.dropout_02(x)
-        x = self.relu(self.layer_2(x))
-        x = self.batchnorm2(x)
+        #print(f"input size: {inputs.shape}")
+        input_split = torch.split(inputs, 1000, dim=1)
+        input_split = list(input_split)
+        #print(f"input split size: {input_split[0].shape}") 
+
+        x0 = self.feature0(input_split[0])
+        x1 = self.feature1(input_split[1])
+        x2 = self.feature2(input_split[2])
+
+        x = torch.cat((x0,x1,x2), dim=1)
+
+        x = self.relu(self.merge_l1(x))
+        x = self.batchnorm_merge_l1(x)
         x = self.dropout_05(x)
-        x = self.relu(self.layer_3(x))
-        x = self.batchnorm3(x)
+        x = self.relu(self.merge_l2(x))
+        x = self.batchnorm_merge_l2(x)
         x = self.dropout_05(x)
-        x = self.relu(self.layer_4(x))
-        x = self.batchnorm4(x)
+        x = self.relu(self.merge_l3(x))
+        x = self.batchnorm_merge_l3(x)
         x = self.dropout_05(x)
-        x = self.relu(self.layer_5(x))
-        x = self.batchnorm5(x)
-        # x = self.dropout(x)
-        # x = self.layer_out(x)
+        x = self.relu(self.merge_l4(x))
+        x = self.batchnorm_merge_l4(x)
+
         return x
 
 
@@ -239,7 +261,7 @@ if __name__ == '__main__':
 
     print("Loading features...")
     features = np.loadtxt(features_path)
-    features_HF = np.loadtxt(features_path_HF)
+    # features_HF = np.loadtxt(features_path_HF)
     # features_VF = np.loadtxt(features_path_VF)
     # features_HF_VF = np.loadtxt(features_path_HF_VF)
     print("Loading features done.")
@@ -269,8 +291,9 @@ if __name__ == '__main__':
     print(f"train_triplets shape: {train_triplets.shape}")
     print(f"train_labels shape: {train_labels.shape}")
 
-    test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
-    print(f"test_triplets shape: {test_triplets.shape}")
+    if training_mode == False:
+        test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
+        print(f"test_triplets shape: {test_triplets.shape}")
 
     # Random switching second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
@@ -291,13 +314,14 @@ if __name__ == '__main__':
     train_labels = np.float32(train_labels)
     #train_labels = np.expand_dims(train_labels, axis=1)
 
-    test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
-    for i in range(test_triplets.shape[0]):
-        test_triplets_features[i] = np.hstack((features_list[np.random.randint(0, 4)][test_triplets[i, 0]],
-                                               features_list[np.random.randint(0, 4)][test_triplets[i, 1]],
-                                               features_list[np.random.randint(0, 4)][test_triplets[i, 2]]))
-    print(f"test_triplets_features shape: {test_triplets_features.shape}")
-    test_triplets_features = np.float32(test_triplets_features)
+    if training_mode == False:
+        test_triplets_features = np.zeros((test_triplets.shape[0], test_triplets.shape[1] * encoder_features))
+        for i in range(test_triplets.shape[0]):
+            test_triplets_features[i] = np.hstack((features_list[np.random.randint(0, 4)][test_triplets[i, 0]],
+                                                   features_list[np.random.randint(0, 4)][test_triplets[i, 1]],
+                                                   features_list[np.random.randint(0, 4)][test_triplets[i, 2]]))
+        print(f"test_triplets_features shape: {test_triplets_features.shape}")
+        test_triplets_features = np.float32(test_triplets_features)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -311,7 +335,7 @@ if __name__ == '__main__':
         max_epochs=epochs,
         batch_size=batch_size,
         lr=learning_rate,
-        device='cuda'
+        device=device
     )
 
     ### calculate cross validation score for training mode

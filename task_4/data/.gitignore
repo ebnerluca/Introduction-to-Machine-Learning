@@ -1,2 +1,6 @@
 features.txt
+features_VF.txt
+features_HF.txt
+features_HF_VF.txt
 test_labels.txt
+fold_masks.txt

@@ -1,7 +1,7 @@
 import numpy as np
 
 kfolds = 5
-images_left_out = 500
+images_left_out = 1000
 image_len = 5000
 fold_interval = 1000
 

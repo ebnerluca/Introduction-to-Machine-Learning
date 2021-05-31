@@ -8,7 +8,7 @@ import torchvision.models
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
 
-from skorch import NeuralNetClassifier, dataset
+from skorch import NeuralNetClassifier, NeuralNetBinaryClassifier, dataset
 from sklearn.model_selection import cross_val_score
 import sklearn.metrics as metrics
 from sklearn.metrics import make_scorer
@@ -24,7 +24,7 @@ img_size = (224, 224)
 image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
 compute_features = False  # features don't need to be recomputed at each run
-training_mode = False    # if true, output file is not generated
+training_mode = True    # if true, output file is not generated
 features_path = "data/features.txt"
 features_path_VF = "data/features_VF.txt"
 features_path_HF = "data/features_HF.txt"
@@ -309,6 +309,7 @@ if __name__ == '__main__':
         criterion=nn.BCEWithLogitsLoss,
         optimizer=optim.Adam, 
         max_epochs=epochs,
+        # optimizer__weight_decay=0.0001,
         batch_size=batch_size,
         lr=learning_rate,
         device='cuda'

@@ -227,7 +227,7 @@ def binary_acc(labels, predictions):
     predictions = np.round_(predictions)
     correct_results_sum = (predictions == labels).sum()
     binary_acc = correct_results_sum / labels.shape[0]
-    binary_acc = np.round_(binary_acc * 100)
+    # binary_acc = np.round_(binary_acc * 100)
 
     return binary_acc
 
@@ -249,11 +249,11 @@ if __name__ == '__main__':
 
     # Read Data
     train_triplets = np.loadtxt("data/train_triplets.txt", dtype=int)
-    train_triplets_switched = np.loadtxt("data/train_triplets.txt", dtype=int)
+    # train_triplets_switched = np.loadtxt("data/train_triplets.txt", dtype=int)
     train_labels = np.ones(train_triplets.shape[0]).reshape((train_triplets.shape[0], 1))
-    train_labels_switched = np.zeros(train_triplets_switched.shape[0]).reshape((train_triplets_switched.shape[0], 1))
+    # train_labels_switched = np.zeros(train_triplets_switched.shape[0]).reshape((train_triplets_switched.shape[0], 1))
 
-    for i in range(len(train_triplets_switched)):
+    """for i in range(len(train_triplets_switched)):
         train_triplets_switched[i] = np.asarray([train_triplets_switched[i, 0],
                                                  train_triplets_switched[i, 2],
                                                  train_triplets_switched[i, 1]])
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     train_data = np.hstack((train_triplets, train_labels))
     np.random.shuffle(train_data)
     train_triplets = train_data[:, :3].reshape(train_triplets.shape).astype(int)
-    train_labels = train_data[:, 3].reshape(train_labels.shape[0], 1)
+    train_labels = train_data[:, 3].reshape(train_labels.shape[0], 1)"""
 
     print(f"train_triplets shape: {train_triplets.shape}")
     print(f"train_labels shape: {train_labels.shape}")
@@ -272,13 +272,13 @@ if __name__ == '__main__':
     test_triplets = np.loadtxt("data/test_triplets.txt", dtype=int)
     print(f"test_triplets shape: {test_triplets.shape}")
 
-    # Random shuffling second and third entry of train_triplets (--> ABC or ACB)
+    # Random switching second and third entry of train_triplets (--> ABC or ACB)
     # otherwise output label would always be 1
-    """for i in range(len(train_triplets)):
+    for i in range(len(train_triplets)):
         shuffle = bool(np.random.randint(0, 2))  # random True or False
         if shuffle:
             train_triplets[i] = np.hstack((train_triplets[i, 0], train_triplets[i, 2], train_triplets[i, 1]))
-            train_labels[i] = 0"""
+            train_labels[i] = 0
 
     train_triplets_features = np.zeros((train_triplets.shape[0], train_triplets.shape[1] * encoder_features))
     for i in range(train_triplets.shape[0]):
@@ -315,12 +315,34 @@ if __name__ == '__main__':
     )
 
     ### calculate cross validation score for training mode
-    custom_scorer = make_scorer(binary_acc, greater_is_better=True)
+    # custom_scorer = make_scorer(binary_acc, greater_is_better=True)
     if training_mode:
-        scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring=custom_scorer, verbose=True)
+        """scores = cross_val_score(classifier, train_triplets_features, train_labels, cv=5, scoring=custom_scorer, verbose=True)
         print("Cross-Validation score {score:.3f},"
               " Standard Deviation {err:.3f}"
-              .format(score = scores.mean(), err = scores.std()))
+              .format(score = scores.mean(), err = scores.std()))"""
+
+        fold_masks = np.loadtxt("data/fold_masks.txt")
+        fold_masks = fold_masks.astype(bool)
+        print(f"masks shape: {fold_masks.shape}")
+
+        bin_acc_avg = 0
+        for mask in fold_masks:
+            train_triplets_fold = train_triplets_features[mask]
+            train_labels_fold = train_labels[mask]
+            validation_triplets_fold = train_triplets_features[~mask]
+            validation_labels = train_labels[~mask]
+
+            classifier = classifier.fit(train_triplets_fold, train_labels_fold)
+            print("===")
+            predictions = classifier.predict_proba(validation_triplets_fold)[:, 1]
+            # predictions = np.around(predictions)
+            bin_acc = binary_acc(validation_labels, predictions)
+            print(f"Binary Acc (Val Set): {bin_acc}")
+            bin_acc_avg += bin_acc
+
+        print(f"Average binary accuracy: {bin_acc_avg/len(fold_masks)}")
+
 
     ### generate output if not
     else:

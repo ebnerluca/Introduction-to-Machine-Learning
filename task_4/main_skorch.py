@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch._C import device
 import torch.nn as nn
+from torch.nn.modules.pooling import AvgPool1d
 import torch.optim as optim
 import torchvision.models
 from torchvision import datasets, transforms
@@ -45,51 +46,21 @@ class BinaryClassification(nn.Module):
 
         n_inputs = 1 * encoder_features  # 1000
         n_layer1 = 500
-        #n_layer2 = 100
-        #n_layer3 = 30 # 50 outputs
-        #self.relu = nn.ReLU()
 
         self.feature0 = nn.Sequential(
-            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            #nn.Dropout(p=0.2),
-            #nn.Linear(n_layer1, n_layer2),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer2),
-            #nn.Dropout(p=0.5),
-            #nn.Linear(n_layer2, n_layer3),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer3),
         )
         self.feature1 = nn.Sequential(
-            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            #nn.Dropout(p=0.2),
-            #nn.Linear(n_layer1, n_layer2),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer2),
-            #nn.Dropout(p=0.5),
-            #nn.Linear(n_layer2, n_layer3),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer3),
         )
         self.feature2 = nn.Sequential(
-            #nn.AvgPool2d(4),
             nn.Linear(n_inputs, n_layer1),
             nn.ReLU(),
             nn.BatchNorm1d(n_layer1),
-            #nn.Dropout(p=0.2),
-            #nn.Linear(n_layer1, n_layer2),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer2),
-            #nn.Dropout(p=0.5),
-            #nn.Linear(n_layer2, n_layer3),
-            #nn.ReLU(),
-            #nn.BatchNorm1d(n_layer3),
         )
 
         merge_n1 = 3*n_layer1
@@ -106,17 +77,9 @@ class BinaryClassification(nn.Module):
         self.batchnorm_merge_l2 = nn.BatchNorm1d(merge_n3)
         self.batchnorm_merge_l3 = nn.BatchNorm1d(merge_n4)
         self.batchnorm_merge_l4 = nn.BatchNorm1d(1)
-        #self.layer_1 = nn.Linear(n_inputs, n_layer1)
-        #self.layer_2 = nn.Linear(n_layer1, n_layer2)
-        #self.layer_3 = nn.Linear(n_layer2, n_layer3)
-        # self.layer_out = nn.Linear(n_layer4, n_outputs)
-        # self.layer_out = nn.Sigmoid()
-        #self.relu = nn.ReLU()
+        
         self.dropout_02 = nn.Dropout(p=0.2)
-        self.dropout_05 = nn.Dropout(p=0.5)
-        #self.batchnorm1 = nn.BatchNorm1d(n_layer1)
-        #self.batchnorm2 = nn.BatchNorm1d(n_layer2)
-        #self.batchnorm3 = nn.BatchNorm1d(n_layer3)
+        self.dropout_05 = nn.Dropout(p=0.5)     
 
     
     def forward(self, inputs):
@@ -143,8 +106,6 @@ class BinaryClassification(nn.Module):
         x = self.relu(self.merge_l4(x))
         x = self.batchnorm_merge_l4(x)
 
-        # x = self.dropout(x)
-        # x = self.layer_out(x)
         return x
 
 
@@ -286,6 +247,7 @@ if __name__ == '__main__':
         optimizer=optim.Adam, 
         max_epochs=epochs,
         lr=learning_rate,
+        optimizer__weight_decay=0.01,
         device=device
     )
 

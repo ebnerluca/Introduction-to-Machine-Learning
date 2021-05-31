@@ -20,11 +20,11 @@ from sklearn.metrics import make_scorer
 
 # preprocessing
 n_images = 10000
-img_size = (300, 300)
-image_loader_batch_size = 16
+img_size = (320, 320)
+image_loader_batch_size = 32
 encoder_features = 1000  # dependant on output of classifier
-compute_features = True  # features don't need to be recomputed at each run
-training_mode = True    # if true, output file is not generated
+compute_features = False  # features don't need to be recomputed at each run
+training_mode = False  # if true, output file is not generated
 features_path = "data/features.txt"
 features_path_VF = "data/features_VF.txt"
 features_path_HF = "data/features_HF.txt"
@@ -203,7 +203,7 @@ def preprocessing():
     np.savetxt(features_path, features)
 
     ### VERICAL FLIP
-    features_VF = np.zeros((0, encoder_features))
+    """features_VF = np.zeros((0, encoder_features))
     iter_VF = 0
     for image_batch in image_loader_VF:
         print(f"Computing features_VF... {iter_VF} / {n_images}", end="\r")  # , flush=True)
@@ -213,7 +213,7 @@ def preprocessing():
         features_VF = np.vstack((features_VF, features_batch.cpu().detach().numpy()))
         iter_VF = iter_VF + image_loader_batch_size
     print(f"\nComputing features_VF done. Saving features under {str(features_path_VF)}")
-    np.savetxt(features_path_VF, features_VF)
+    np.savetxt(features_path_VF, features_VF)"""
 
     ### HORICONTAL FLIP
     features_HF = np.zeros((0, encoder_features))
@@ -229,7 +229,7 @@ def preprocessing():
     np.savetxt(features_path_HF, features_HF)
 
     ### HORICONTAL + VERTICAL FLIP
-    features_HF_VF = np.zeros((0, encoder_features))
+    """features_HF_VF = np.zeros((0, encoder_features))
     iter_HF_VF = 0
     for image_batch in image_loader_HF_VF:
         print(f"Computing features_HF_VF... {iter_HF_VF} / {n_images}", end="\r")  # , flush=True)
@@ -239,7 +239,7 @@ def preprocessing():
         features_HF_VF = np.vstack((features_VF, features_batch.cpu().detach().numpy()))
         iter_HF_VF = iter_HF_VF + image_loader_batch_size
     print(f"\nComputing features_HF done. Saving features under {str(features_path_HF_VF)}")
-    np.savetxt(features_path_HF_VF, features_HF_VF)
+    np.savetxt(features_path_HF_VF, features_HF_VF)"""
 
 def binary_acc(labels, predictions):
     # map predictions to binary 0 or 1
